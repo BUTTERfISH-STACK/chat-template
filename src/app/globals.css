@@ -1,65 +1,8 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  
-  /* Premium Gold Colors */
-  --color-gold-50: #faf9f5;
-  --color-gold-100: #f2ebd9;
-  --color-gold-200: #e8d9b3;
-  --color-gold-300: #d9c085;
-  --color-gold-400: #c9a65b;
-  --color-gold-500: #b8923d;
-  --color-gold-600: #a67d30;
-  --color-gold-700: #856227;
-  --color-gold-800: #6e4f22;
-  --color-gold-900: #5a421d;
-  --color-gold-950: #302208;
-}
-
-/* Premium Black & Gold Theme */
+/* Premium Black & Gold Theme - CSS Variables */
 :root {
   --radius: 0.625rem;
   --background: #0a0a0a;
@@ -93,15 +36,364 @@
   --sidebar-accent-foreground: #faf9f5;
   --sidebar-border: #2a2a2a;
   --sidebar-ring: #b8923d;
+  
+  /* Premium Gold Colors */
+  --color-gold-50: #faf9f5;
+  --color-gold-100: #f2ebd9;
+  --color-gold-200: #e8d9b3;
+  --color-gold-300: #d9c085;
+  --color-gold-400: #c9a65b;
+  --color-gold-500: #b8923d;
+  --color-gold-600: #a67d30;
+  --color-gold-700: #856227;
+  --color-gold-800: #6e4f22;
+  --color-gold-900: #5a421d;
+  --color-gold-950: #302208;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline-color: var(--ring);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans), system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Premium Button Styles */
+  .btn-gold {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    transition: all 0.3s ease;
+  }
+  .btn-gold:hover {
+    background-color: color-mix(in srgb, var(--primary) 90%, transparent);
+  }
+  
+  .btn-gold-outline {
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    transition: all 0.3s ease;
+  }
+  .btn-gold-outline:hover {
+    background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+  
+  .btn-ghost-gold {
+    color: var(--primary);
+    transition: all 0.3s ease;
+  }
+  .btn-ghost-gold:hover {
+    background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+  
+  /* Premium Card Styles */
+  .card-premium {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-premium-hover {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  .card-premium-hover:hover {
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+    box-shadow: 0 0 15px -3px color-mix(in srgb, var(--primary) 10%, transparent);
+  }
+  
+  /* Premium Input Styles */
+  .input-premium {
+    background-color: var(--secondary);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    transition: all 0.2s ease;
+  }
+  .input-premium::placeholder {
+    color: var(--muted-foreground);
+  }
+  .input-premium:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+  
+  /* Premium Gradient Text */
+  .text-gradient-gold {
+    background: linear-gradient(to right, var(--color-gold-400), var(--color-gold-500), var(--color-gold-600));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  
+  /* Premium Border Gradient */
+  .border-gradient-gold {
+    position: relative;
+  }
+  .border-gradient-gold::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 0.75rem;
+    padding: 1px;
+    background: linear-gradient(to right, var(--color-gold-500), var(--color-gold-600));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: -1;
+  }
+  
+  /* Glass Effect */
+  .glass {
+    background-color: color-mix(in srgb, var(--background) 80%, transparent);
+    backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  }
+  
+  /* Sidebar Styles */
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: var(--muted-foreground);
+    transition: all 0.2s ease;
+  }
+  .sidebar-item:hover {
+    color: var(--foreground);
+    background-color: color-mix(in srgb, var(--secondary) 50%, transparent);
+  }
+  
+  .sidebar-item-active {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+    color: var(--primary);
+    border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+  
+  /* Marketplace Styles */
+  .marketplace-card {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .marketplace-card:hover {
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  }
+  
+  .marketplace-card-image {
+    aspect-ratio: 1;
+    background-color: var(--secondary);
+    object-fit: cover;
+  }
+  
+  .marketplace-card-content {
+    padding: 1rem;
+  }
+  
+  .marketplace-card-title {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  
+  .marketplace-card-price {
+    color: var(--primary);
+    font-weight: 700;
+  }
+  
+  .marketplace-card-seller {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  
+  /* Store Card */
+  .store-card {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  .store-card:hover {
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  }
+  
+  .store-logo {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 9999px;
+    background-color: var(--secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+  
+  .store-name {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--foreground);
+  }
+  
+  .store-description {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    margin-top: 0.25rem;
+  }
+  
+  .store-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  
+  .store-stat {
+    text-align: center;
+  }
+  
+  .store-stat-value {
+    font-weight: 700;
+    color: var(--primary);
+  }
+  
+  .store-stat-label {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  
+  /* Chat-specific styles */
+  .chat-container {
+    background-color: var(--background);
+  }
+  
+  .chat-header {
+    background-color: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem;
+  }
+  
+  .chat-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+  
+  .chat-footer {
+    background-color: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 1rem;
+  }
+  
+  .message-bubble {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+  }
+  
+  .message-bubble.own {
+    justify-content: flex-end;
+  }
+  
+  .message-content {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .message-author {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .message-text {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+  
+  .message-timestamp {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  
+  .message-status {
+    font-size: 0.75rem;
+  }
+  
+  .chat-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background-color: var(--secondary);
+    border-radius: 0.5rem;
+  }
+  
+  .chat-list-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .chat-list-item:hover {
+    background-color: color-mix(in srgb, var(--secondary) 50%, transparent);
+  }
+  
+  .chat-list-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+  }
+  
+  .chat-list-info {
+    flex: 1;
+    min-width: 0;
+    margin-left: 0.75rem;
+  }
+  
+  .chat-list-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  
+  .chat-list-timestamp {
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+  
+  .chat-list-message {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .chat-list-badge {
+    font-size: 0.75rem;
   }
 }
 
@@ -112,7 +404,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #1f1f1f;
+  background: var(--secondary);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -121,195 +413,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b8923d;
-}
-
-/* Chat-specific styles */
-@layer components {
-  .chat-container {
-    @apply bg-background;
-  }
-  
-  .chat-header {
-    @apply bg-card border-b border-border p-4;
-  }
-  
-  .chat-main {
-    @apply flex-1 overflow-y-auto p-4;
-  }
-  
-  .chat-footer {
-    @apply bg-card border-t border-border p-4;
-  }
-  
-  .message-bubble {
-    @apply flex items-start space-x-3 rounded-lg p-3;
-  }
-  
-  .message-bubble.own {
-    @apply justify-end;
-  }
-  
-  .message-content {
-    @apply flex-1 min-w-0;
-  }
-  
-  .message-author {
-    @apply text-sm font-medium;
-  }
-  
-  .message-text {
-    @apply text-sm mt-1;
-  }
-  
-  .message-timestamp {
-    @apply text-xs text-muted-foreground;
-  }
-  
-  .message-status {
-    @apply text-xs;
-  }
-  
-  .chat-input-container {
-    @apply flex items-center space-x-3 p-4 bg-secondary rounded-lg;
-  }
-  
-  .chat-list-item {
-    @apply flex items-center p-3 rounded-lg hover:bg-secondary/50 cursor-pointer transition-colors;
-  }
-  
-  .chat-list-avatar {
-    @apply w-10 h-10 shrink-0;
-  }
-  
-  .chat-list-info {
-    @apply flex-1 min-w-0 ml-3;
-  }
-  
-  .chat-list-name {
-    @apply font-medium text-sm;
-  }
-  
-  .chat-list-timestamp {
-    @apply text-xs text-muted-foreground;
-  }
-  
-  .chat-list-message {
-    @apply text-sm text-muted-foreground truncate;
-  }
-  
-  .chat-list-badge {
-    @apply text-xs;
-  }
-  
-  /* Premium Button Styles */
-  .btn-gold {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300;
-  }
-  
-  .btn-gold-outline {
-    @apply border border-primary text-primary hover:bg-primary/10 transition-all duration-300;
-  }
-  
-  .btn-ghost-gold {
-    @apply text-primary hover:bg-primary/10 transition-all duration-300;
-  }
-  
-  /* Premium Card Styles */
-  .card-premium {
-    @apply bg-card border border-border rounded-xl p-6 shadow-lg;
-  }
-  
-  .card-premium-hover {
-    @apply bg-card border border-border rounded-xl p-6 shadow-lg hover:border-primary/50 hover:shadow-primary/10 transition-all duration-300;
-  }
-  
-  /* Premium Input Styles */
-  .input-premium {
-    @apply bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary;
-  }
-  
-  /* Premium Gradient Text */
-  .text-gradient-gold {
-    @apply bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 bg-clip-text text-transparent;
-  }
-  
-  /* Premium Border Gradient */
-  .border-gradient-gold {
-    @apply relative before:absolute before:inset-0 before:rounded-xl before:p-[1px] before:bg-gradient-to-r before:from-gold-500 before:to-gold-600 before:-z-10;
-  }
-  
-  /* Glass Effect */
-  .glass {
-    @apply bg-background/80 backdrop-blur-xl border border-border/50;
-  }
-  
-  /* Sidebar Styles */
-  .sidebar-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200;
-  }
-  
-  .sidebar-item-active {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/10 text-primary border border-primary/20;
-  }
-  
-  /* Marketplace Styles */
-  .marketplace-card {
-    @apply bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-all duration-300;
-  }
-  
-  .marketplace-card-image {
-    @apply aspect-square bg-secondary object-cover;
-  }
-  
-  .marketplace-card-content {
-    @apply p-4;
-  }
-  
-  .marketplace-card-title {
-    @apply font-semibold text-foreground;
-  }
-  
-  .marketplace-card-price {
-    @apply text-primary font-bold;
-  }
-  
-  .marketplace-card-seller {
-    @apply text-sm text-muted-foreground;
-  }
-  
-  /* Store Card */
-  .store-card {
-    @apply bg-card border border-border rounded-xl p-6 hover:border-primary/50 transition-all duration-300;
-  }
-  
-  .store-logo {
-    @apply w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-primary text-xl font-bold;
-  }
-  
-  .store-name {
-    @apply font-semibold text-lg text-foreground;
-  }
-  
-  .store-description {
-    @apply text-sm text-muted-foreground mt-1;
-  }
-  
-  .store-stats {
-    @apply flex gap-4 mt-4;
-  }
-  
-  .store-stat {
-    @apply text-center;
-  }
-  
-  .store-stat-value {
-    @apply font-bold text-primary;
-  }
-  
-  .store-stat-label {
-    @apply text-xs text-muted-foreground;
-  }
+  background: var(--primary);
 }
 
 /* Animation Classes */
@@ -332,6 +436,10 @@
   
   .animate-slide-in-right {
     animation: slideInRight 0.3s ease-out;
+  }
+  
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
   }
 }
 
@@ -393,8 +501,4 @@
     transform: translateY(-20px) translateX(10px);
     opacity: 0.5;
   }
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
 }

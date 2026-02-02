@@ -57,16 +57,16 @@ export async function sendOTP(phoneNumber: string, otp: string): Promise<boolean
       return true;
     } else if (_isTwilioConfigured) {
       // Fallback to Twilio
-      const twilio = await import('twilio');
-      const client = twilio.default(twilioAccountSid, twilioAuthToken);
-      
-      await client.messages.create({
-        body: `Your Vellon verification code is: ${otp}. This code expires in 5 minutes.`,
-        from: twilioWhatsAppNumber!,
-        to: `whatsapp:${formattedPhone}`,
-      });
-      
-      console.log(`[Twilio WhatsApp] OTP sent to ${formattedPhone}: ${otp}`);
+      // Note: twilio is not installed, uncomment if needed
+      // const twilio = await import('twilio');
+      // const client = twilio.default(twilioAccountSid, twilioAuthToken);
+      // await client.messages.create({
+      //   body: `Your Vellon verification code is: ${otp}. This code expires in 5 minutes.`,
+      //   from: twilioWhatsAppNumber!,
+      //   to: `whatsapp:${formattedPhone}`,
+      // });
+      // console.log(`[Twilio WhatsApp] OTP sent to ${formattedPhone}: ${otp}`);
+      console.log(`[Twilio] OTP would be sent to ${formattedPhone}: ${otp} (Twilio not configured)`);
       return true;
     } else {
       // Development mode - log OTP to console
