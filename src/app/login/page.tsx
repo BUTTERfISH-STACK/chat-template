@@ -6,40 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-interface ApiResponse {
-  error?: string;
-  success?: boolean;
-  message?: string;
-  otp?: string;
-}
-
-/**
- * Safely parse JSON response with error handling
- * This function is more forgiving and will attempt to parse
- * even if content-type is not set, but handles all error cases
- */
-async function safeJsonParse(response: Response): Promise<ApiResponse> {
-  try {
-    // First try to get the response text
-    const text = await response.text();
-    
-    // If empty response
-    if (!text || text.trim() === '') {
-      return { error: 'Server returned empty response' };
-    }
-    
-    // Try to parse as JSON
-    try {
-      return JSON.parse(text) as ApiResponse;
-    } catch (parseError) {
-      // If parsing fails, return the text as an error message
-      return { error: `Server error: ${text.substring(0, 200)}` };
-    }
-  } catch (readError) {
-    return { error: 'Failed to read server response' };
-  }
-}
-
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -54,25 +20,24 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Send OTP via WhatsApp Baileys
+      // Send OTP via API
       const response = await fetch("/api/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber: phoneNumber.trim() }),
       });
 
-      // Safely parse JSON response
-      const data = await safeJsonParse(response);
+      // Parse response
+      const data = await response.json();
 
-      // Handle non-OK responses or parse errors
-      if (!response.ok || data.error) {
-        throw new Error(data.error || `Server error: ${response.status}`);
+      // Handle non-OK responses
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to send OTP");
       }
 
       // In development mode, show OTP in console
       if (data.otp) {
         console.log("Development OTP:", data.otp);
-        // Store OTP in sessionStorage for development
         sessionStorage.setItem("dev_otp", data.otp);
       }
 

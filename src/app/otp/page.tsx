@@ -4,14 +4,6 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-interface ApiResponse<T = any> {
-  error?: string;
-  success?: boolean;
-  message?: string;
-  valid?: boolean;
-  otp?: string;
-}
-
 function OTPPageContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,33 +47,6 @@ function OTPPageContent() {
     }
   };
 
-  /**
-   * Safely parse JSON response with error handling
-   * This function is more forgiving and will attempt to parse
-   * even if content-type is not set, but handles all error cases
-   */
-  async function safeJsonParse(response: Response): Promise<ApiResponse> {
-    try {
-      // First try to get the response text
-      const text = await response.text();
-      
-      // If empty response
-      if (!text || text.trim() === '') {
-        return { error: 'Server returned empty response' };
-      }
-      
-      // Try to parse as JSON
-      try {
-        return JSON.parse(text) as ApiResponse;
-      } catch (parseError) {
-        // If parsing fails, return the text as an error message
-        return { error: `Server error: ${text.substring(0, 200)}` };
-      }
-    } catch (readError) {
-      return { error: 'Failed to read server response' };
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = otp.join("");
@@ -98,27 +63,16 @@ function OTPPageContent() {
         body: JSON.stringify({ phoneNumber, otp: otpCode }),
       });
 
-      // Safely parse JSON response
-      const data = await safeJsonParse(response);
+      // Parse response
+      const data = await response.json();
 
-      // Handle non-OK responses or parse errors
-      if (!response.ok || data.error) {
-        throw new Error(data.error || `Server error: ${response.status}`);
+      // Handle non-OK responses
+      if (!response.ok || !data.valid) {
+        throw new Error(data.error || data.message || "Invalid OTP");
       }
 
-      if (data.valid) {
-        // Check for development OTP
-        const devOtp = sessionStorage.getItem("dev_otp");
-        if (devOtp && devOtp !== otpCode) {
-          // Development mode - still verify but warn
-          console.warn("Development mode: OTP mismatch. Expected:", devOtp);
-        }
-        
-        // Navigate to chat on success
-        router.push("/chat");
-      } else {
-        throw new Error(data.message || "Invalid OTP");
-      }
+      // Navigate to chat on success
+      router.push("/chat");
     } catch (err: any) {
       const errorMessage = err.message || "Invalid OTP. Please try again.";
       setError(errorMessage);
@@ -140,21 +94,17 @@ function OTPPageContent() {
         body: JSON.stringify({ phoneNumber }),
       });
 
-      // Safely parse JSON response
-      const data = await safeJsonParse(response);
+      // Parse response
+      const data = await response.json();
 
-      // Handle non-OK responses or parse errors
-      if (!response.ok || data.error) {
-        throw new Error(data.error || `Server error: ${response.status}`);
+      // Handle non-OK responses
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to resend OTP");
       }
 
       if (data.otp) {
         console.log("Development OTP:", data.otp);
         sessionStorage.setItem("dev_otp", data.otp);
-      }
-
-      if (!data.success) {
-        throw new Error(data.message || "Failed to resend OTP");
       }
     } catch (err: any) {
       const errorMessage = err.message || "Failed to resend OTP";
