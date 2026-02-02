@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { mockDb, generateId } from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -14,9 +14,7 @@ async function getUserFromToken(request: NextRequest) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
+    const user = Array.from(mockDb.users.values()).find((u: any) => u.id === decoded.userId);
     return user;
   } catch {
     return null;
@@ -33,53 +31,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const conversations = await prisma.conversation.findMany({
-      where: {
-        participants: {
-          some: {
-            userId: user.id,
-          },
-        },
-      },
-      include: {
-        participants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                status: true,
-              },
-            },
-          },
-        },
-        messages: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 1,
-        },
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
+    // Get user's conversations
+    const conversations = Array.from(mockDb.conversations.values()).filter((conv: any) => {
+      const participants = Array.from(mockDb.conversationParticipants.values());
+      return participants.some((p: any) => p.conversationId === conv.id && p.userId === user.id);
     });
 
-    const formattedConversations = conversations.map((conv) => {
-      const otherParticipants = conv.participants.filter(
-        (p) => p.userId !== user.id
-      );
-      const lastMessage = conv.messages[0];
+    const formattedConversations = conversations.map((conv: any) => {
+      const participants = Array.from(mockDb.conversationParticipants.values())
+        .filter((p: any) => p.conversationId === conv.id && p.userId !== user.id);
+      
+      const otherUser = participants.length > 0 
+        ? Array.from(mockDb.users.values()).find((u: any) => u.id === participants[0].userId)
+        : null;
+
+      const messages = Array.from(mockDb.messages.values())
+        .filter((m: any) => m.conversationId === conv.id)
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      const lastMessage = messages[0];
 
       return {
         id: conv.id,
-        name: conv.name || otherParticipants[0]?.user.name || 'Unknown',
-        avatar: otherParticipants[0]?.user.avatar,
-        status: otherParticipants[0]?.user.status,
+        name: conv.name || otherUser?.name || 'Unknown',
+        avatar: otherUser?.avatar,
+        status: otherUser?.status?.toLowerCase(),
         lastMessage: lastMessage?.content || 'No messages yet',
-        timestamp: lastMessage?.createdAt.toISOString() || conv.createdAt.toISOString(),
-        unreadCount: 0, // Calculate based on lastReadAt
+        timestamp: lastMessage?.createdAt || conv.createdAt,
+        unreadCount: 0,
       };
     });
 
@@ -116,18 +95,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if conversation already exists
-    const existingConv = await prisma.conversation.findFirst({
-      where: {
-        type: 'DIRECT',
-        participants: {
-          every: {
-            userId: { in: [user.id, participantId] },
-          },
-        },
-      },
-      include: {
-        participants: true,
-      },
+    const existingConvs = Array.from(mockDb.conversations.values());
+    const existingConv = existingConvs.find((conv: any) => {
+      const participants = Array.from(mockDb.conversationParticipants.values())
+        .filter((p: any) => p.conversationId === conv.id);
+      const participantIds = participants.map((p: any) => p.userId);
+      return participantIds.includes(user.id) && participantIds.includes(participantId);
     });
 
     if (existingConv) {
@@ -138,30 +111,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new conversation
-    const conversation = await prisma.conversation.create({
-      data: {
-        type: 'DIRECT',
-        participants: {
-          create: [
-            { userId: user.id },
-            { userId: participantId },
-          ],
-        },
-      },
-      include: {
-        participants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                status: true,
-              },
-            },
-          },
-        },
-      },
+    const conversation = {
+      id: generateId(),
+      name: null,
+      type: 'DIRECT',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    mockDb.conversations.set(conversation.id, conversation);
+
+    // Add participants
+    mockDb.conversationParticipants.set(generateId(), {
+      id: generateId(),
+      userId: user.id,
+      conversationId: conversation.id,
+      joinedAt: new Date(),
+      lastReadAt: null,
+    });
+
+    mockDb.conversationParticipants.set(generateId(), {
+      id: generateId(),
+      userId: participantId,
+      conversationId: conversation.id,
+      joinedAt: new Date(),
+      lastReadAt: null,
     });
 
     return NextResponse.json({

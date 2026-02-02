@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { mockDb, generateId } from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -15,10 +15,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find OTP record
-    const otpRecord = await prisma.oTP.findUnique({
-      where: { phone: phoneNumber },
-    });
+    // Find OTP record in mock database
+    const otpRecord = mockDb.otps.get(phoneNumber);
 
     if (!otpRecord) {
       return NextResponse.json(
@@ -52,23 +50,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark OTP as used
-    await prisma.oTP.update({
-      where: { id: otpRecord.id },
-      data: { used: true },
-    });
+    otpRecord.used = true;
 
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { phone: phoneNumber },
-    });
+    // Find or create user in mock database
+    let user = Array.from(mockDb.users.values()).find((u: any) => u.phone === phoneNumber);
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          phone: phoneNumber,
-          name: phoneNumber, // Default name to phone number
-        },
-      });
+      user = {
+        id: generateId(),
+        phone: phoneNumber,
+        name: phoneNumber,
+        avatar: null,
+        bio: null,
+        status: 'OFFLINE',
+        lastSeen: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockDb.users.set(user.id, user);
     }
 
     // Generate JWT token

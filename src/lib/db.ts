@@ -1,19 +1,37 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaLibSql } from '@prisma/adapter-libsql';
+// Mock database for development - no Prisma required
+// This file provides mock data for all database operations
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+export const mockDb = {
+  // Users
+  users: new Map<string, any>(),
+  
+  // OTP codes
+  otps: new Map<string, { code: string; expiresAt: Date; used: boolean }>(),
+  
+  // Conversations
+  conversations: new Map<string, any>(),
+  conversationParticipants: new Map<string, any>(),
+  
+  // Messages
+  messages: new Map<string, any>(),
+  
+  // Stores
+  stores: new Map<string, any>(),
+  
+  // Products
+  products: new Map<string, any>(),
+  
+  // Orders
+  orders: new Map<string, any>(),
+  orderItems: new Map<string, any>(),
+  
+  // Reviews
+  reviews: new Map<string, any>(),
 };
 
-function createPrismaClient() {
-  const adapter = new PrismaLibSql({
-    url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
-  });
-  return new PrismaClient({ adapter });
+// Helper to generate IDs
+export function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-
-export default prisma;
+export default mockDb;

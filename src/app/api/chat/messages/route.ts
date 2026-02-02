@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { mockDb, generateId } from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -14,9 +14,7 @@ async function getUserFromToken(request: NextRequest) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
+    const user = Array.from(mockDb.users.values()).find((u: any) => u.id === decoded.userId);
     return user;
   } catch {
     return null;
@@ -43,46 +41,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify user is participant in conversation
-    const participant = await prisma.conversationParticipant.findFirst({
-      where: {
-        conversationId,
-        userId: user.id,
-      },
-    });
+    // Verify user is participant
+    const participants = Array.from(mockDb.conversationParticipants.values());
+    const isParticipant = participants.some(
+      (p: any) => p.conversationId === conversationId && p.userId === user.id
+    );
 
-    if (!participant) {
+    if (!isParticipant) {
       return NextResponse.json(
         { success: false, error: 'Not a participant in this conversation' },
         { status: 403 }
       );
     }
 
-    const messages = await prisma.message.findMany({
-      where: { conversationId },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
+    const messages = Array.from(mockDb.messages.values())
+      .filter((m: any) => m.conversationId === conversationId)
+      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-    const formattedMessages = messages.map((msg) => ({
-      id: msg.id,
-      chatId: msg.conversationId!,
-      author: msg.sender.name || 'Unknown',
-      content: msg.content,
-      timestamp: msg.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isOwnMessage: msg.senderId === user.id,
-      status: msg.isRead ? 'read' : 'sent',
-    }));
+    const formattedMessages = messages.map((msg: any) => {
+      const sender = Array.from(mockDb.users.values()).find((u: any) => u.id === msg.senderId);
+      return {
+        id: msg.id,
+        chatId: msg.conversationId,
+        author: sender?.name || 'Unknown',
+        content: msg.content,
+        timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isOwnMessage: msg.senderId === user.id,
+        status: msg.isRead ? 'read' : 'sent',
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -116,90 +103,99 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let messageData: any = {
-      content,
-      senderId: user.id,
-    };
+    let targetConversationId = conversationId;
 
-    if (conversationId) {
-      // Verify user is participant
-      const participant = await prisma.conversationParticipant.findFirst({
-        where: {
-          conversationId,
-          userId: user.id,
-        },
-      });
-
-      if (!participant) {
-        return NextResponse.json(
-          { success: false, error: 'Not a participant in this conversation' },
-          { status: 403 }
-        );
-      }
-
-      messageData.conversationId = conversationId;
-    } else if (receiverId) {
+    if (!conversationId && receiverId) {
       // Direct message - find or create conversation
-      let conversation = await prisma.conversation.findFirst({
-        where: {
-          type: 'DIRECT',
-          participants: {
-            every: {
-              userId: { in: [user.id, receiverId] },
-            },
-          },
-        },
+      const existingConvs = Array.from(mockDb.conversations.values());
+      let conversation = existingConvs.find((conv: any) => {
+        const participants = Array.from(mockDb.conversationParticipants.values())
+          .filter((p: any) => p.conversationId === conv.id);
+        const participantIds = participants.map((p: any) => p.userId);
+        return participantIds.includes(user.id) && participantIds.includes(receiverId);
       });
 
       if (!conversation) {
-        conversation = await prisma.conversation.create({
-          data: {
-            type: 'DIRECT',
-            participants: {
-              create: [
-                { userId: user.id },
-                { userId: receiverId },
-              ],
-            },
-          },
+        conversation = {
+          id: generateId(),
+          name: null,
+          type: 'DIRECT',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        mockDb.conversations.set(conversation.id, conversation);
+
+        mockDb.conversationParticipants.set(generateId(), {
+          id: generateId(),
+          userId: user.id,
+          conversationId: conversation.id,
+          joinedAt: new Date(),
+          lastReadAt: null,
+        });
+
+        mockDb.conversationParticipants.set(generateId(), {
+          id: generateId(),
+          userId: receiverId,
+          conversationId: conversation.id,
+          joinedAt: new Date(),
+          lastReadAt: null,
         });
       }
 
-      messageData.conversationId = conversation.id;
-    } else {
+      targetConversationId = conversation.id;
+    } else if (!conversationId && !receiverId) {
       return NextResponse.json(
         { success: false, error: 'Either conversationId or receiverId is required' },
         { status: 400 }
       );
     }
 
-    const message = await prisma.message.create({
-      data: messageData,
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-      },
-    });
+    // Verify user is participant
+    if (targetConversationId) {
+      const participants = Array.from(mockDb.conversationParticipants.values());
+      const isParticipant = participants.some(
+        (p: any) => p.conversationId === targetConversationId && p.userId === user.id
+      );
+
+      if (!isParticipant) {
+        return NextResponse.json(
+          { success: false, error: 'Not a participant in this conversation' },
+          { status: 403 }
+        );
+      }
+    }
+
+    const message = {
+      id: generateId(),
+      content,
+      type: 'TEXT',
+      mediaUrl: null,
+      senderId: user.id,
+      receiverId: receiverId || null,
+      conversationId: targetConversationId,
+      isRead: false,
+      createdAt: new Date(),
+    };
+
+    mockDb.messages.set(message.id, message);
 
     // Update conversation timestamp
-    await prisma.conversation.update({
-      where: { id: messageData.conversationId },
-      data: { updatedAt: new Date() },
-    });
+    if (targetConversationId) {
+      const conv = mockDb.conversations.get(targetConversationId);
+      if (conv) {
+        conv.updatedAt = new Date();
+        mockDb.conversations.set(targetConversationId, conv);
+      }
+    }
 
     return NextResponse.json({
       success: true,
       message: {
         id: message.id,
-        chatId: message.conversationId!,
-        author: message.sender.name || 'Unknown',
+        chatId: message.conversationId,
+        author: user.name || 'Unknown',
         content: message.content,
-        timestamp: message.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isOwnMessage: true,
         status: 'sent',
       },

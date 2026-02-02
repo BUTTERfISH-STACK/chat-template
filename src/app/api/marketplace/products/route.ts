@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { mockDb, generateId } from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -14,14 +14,52 @@ async function getUserFromToken(request: NextRequest) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
+    const user = Array.from(mockDb.users.values()).find((u: any) => u.id === decoded.userId);
     return user;
   } catch {
     return null;
   }
 }
+
+// Mock products data
+const mockProducts = [
+  {
+    id: '1',
+    name: 'Premium Wireless Headphones',
+    price: 299.99,
+    image: null,
+    seller: 'TechStore',
+    sellerId: 's1',
+    category: 'Electronics',
+    description: 'High-quality wireless headphones with noise cancellation',
+    stock: 15,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Leather Messenger Bag',
+    price: 149.99,
+    image: null,
+    seller: 'LuxuryLeather',
+    sellerId: 's2',
+    category: 'Accessories',
+    description: 'Handcrafted genuine leather messenger bag',
+    stock: 8,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Smart Watch Pro',
+    price: 399.99,
+    image: null,
+    seller: 'TechStore',
+    sellerId: 's1',
+    category: 'Electronics',
+    description: 'Advanced smartwatch with health monitoring',
+    stock: 20,
+    createdAt: new Date().toISOString(),
+  },
+];
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,57 +68,34 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const storeId = searchParams.get('storeId');
 
-    const where: any = {
-      isActive: true,
-    };
+    let products = [...mockProducts];
+
+    // Also include products from mockDb
+    const dbProducts = Array.from(mockDb.products.values());
+    if (dbProducts.length > 0) {
+      products = [...products, ...dbProducts];
+    }
 
     if (category) {
-      where.category = category;
+      products = products.filter((p: any) => p.category === category);
     }
 
     if (storeId) {
-      where.storeId = storeId;
+      products = products.filter((p: any) => p.storeId === storeId);
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
+      const lowerSearch = search.toLowerCase();
+      products = products.filter((p: any) =>
+        p.name.toLowerCase().includes(lowerSearch) ||
+        p.description?.toLowerCase().includes(lowerSearch) ||
+        p.seller.toLowerCase().includes(lowerSearch)
+      );
     }
-
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        store: {
-          select: {
-            id: true,
-            name: true,
-            rating: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    const formattedProducts = products.map((product) => ({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      seller: product.store.name,
-      sellerId: product.store.id,
-      category: product.category,
-      description: product.description || '',
-      stock: product.stock,
-      createdAt: product.createdAt.toISOString(),
-    }));
 
     return NextResponse.json({
       success: true,
-      products: formattedProducts,
+      products,
     });
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -111,12 +126,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns the store
-    const store = await prisma.store.findFirst({
-      where: {
-        id: storeId,
-        ownerId: user.id,
-      },
-    });
+    const store = Array.from(mockDb.stores.values()).find(
+      (s: any) => s.id === storeId && s.ownerId === user.id
+    );
 
     if (!store) {
       return NextResponse.json(
@@ -125,32 +137,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const product = await prisma.product.create({
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        category,
-        stock: stock || 0,
-        storeId,
-        image,
-      },
-    });
+    const product = {
+      id: generateId(),
+      name,
+      description,
+      price: parseFloat(price),
+      image,
+      category,
+      stock: stock || 0,
+      storeId,
+      isActive: true,
+      seller: store.name,
+      sellerId: store.id,
+      createdAt: new Date().toISOString(),
+    };
+
+    mockDb.products.set(product.id, product);
 
     return NextResponse.json({
       success: true,
-      product: {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        seller: store.name,
-        sellerId: store.id,
-        category: product.category,
-        description: product.description || '',
-        stock: product.stock,
-        createdAt: product.createdAt.toISOString(),
-      },
+      product,
     });
   } catch (error) {
     console.error('Error creating product:', error);
