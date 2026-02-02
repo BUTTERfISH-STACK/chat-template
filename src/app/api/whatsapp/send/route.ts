@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendOTP } from '@/lib/whatsapp';
+import { sendOTP, formatPhoneNumber } from '@/lib/whatsapp';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,8 +14,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Format phone number consistently
+    const formattedPhone = formatPhoneNumber(body.phoneNumber);
+    console.log(`[API] Send OTP request for: ${formattedPhone}`);
+    
     // Send OTP
-    const result = await sendOTP(body.phoneNumber);
+    const result = await sendOTP(formattedPhone);
     
     return NextResponse.json(result);
   } catch (error: any) {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatPhoneNumber } from "@/lib/whatsapp";
 
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -24,11 +25,15 @@ export default function LoginPage() {
     setGeneratedOtp("");
 
     try {
+      // Format phone number consistently
+      const formattedPhone = formatPhoneNumber(phoneNumber.trim());
+      console.log(`[Login] Sending OTP request for: ${formattedPhone}`);
+      
       // Send OTP via API
       const response = await fetch("/api/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber: phoneNumber.trim() }),
+        body: JSON.stringify({ phoneNumber: formattedPhone }),
       });
 
       // Parse response
@@ -47,7 +52,7 @@ export default function LoginPage() {
         setSuccessMessage("OTP sent! Check the code below:");
       } else {
         // Navigate to OTP verification page
-        router.push(`/otp?phone=${encodeURIComponent(phoneNumber.trim())}`);
+        router.push(`/otp?phone=${encodeURIComponent(formattedPhone)}`);
       }
     } catch (err: any) {
       const errorMessage = err.message || "Failed to send OTP. Please try again.";
@@ -59,7 +64,8 @@ export default function LoginPage() {
 
   const handleUseOtp = () => {
     if (generatedOtp) {
-      router.push(`/otp?phone=${encodeURIComponent(phoneNumber.trim())}`);
+      const formattedPhone = formatPhoneNumber(phoneNumber.trim());
+      router.push(`/otp?phone=${encodeURIComponent(formattedPhone)}`);
     }
   };
 

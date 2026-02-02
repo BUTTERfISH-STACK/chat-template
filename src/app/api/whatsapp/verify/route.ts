@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyOTP } from '@/lib/whatsapp';
+import { verifyOTP, formatPhoneNumber } from '@/lib/whatsapp';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,8 +21,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Format phone number consistently
+    const formattedPhone = formatPhoneNumber(body.phoneNumber);
+    console.log(`[API] Verify OTP request for: ${formattedPhone}, otp: ${body.otp}`);
+    
     // Verify OTP
-    const isValid = verifyOTP(body.phoneNumber, body.otp);
+    const isValid = verifyOTP(formattedPhone, body.otp);
     
     return NextResponse.json({
       valid: isValid,

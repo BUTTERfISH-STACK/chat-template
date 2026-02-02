@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { formatPhoneNumber } from "@/lib/whatsapp";
 
 function OTPPageContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -85,11 +86,15 @@ function OTPPageContent() {
     setError("");
 
     try {
+      // Format phone number consistently
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      console.log(`[OTP] Verifying for: ${formattedPhone}, code: ${otpCode}`);
+      
       // Verify OTP via API
       const response = await fetch("/api/whatsapp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber, otp: otpCode }),
+        body: JSON.stringify({ phoneNumber: formattedPhone, otp: otpCode }),
       });
 
       // Parse response
@@ -120,10 +125,13 @@ function OTPPageContent() {
     setSuccessMessage("");
     
     try {
+      // Format phone number consistently
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      
       const response = await fetch("/api/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify({ phoneNumber: formattedPhone }),
       });
 
       // Parse response
@@ -254,7 +262,7 @@ function OTPPageContent() {
           <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <span>Code expires in 5 minutes</span>
+          <span>Code expires in 15 minutes</span>
         </div>
       </div>
     </div>

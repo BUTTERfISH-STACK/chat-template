@@ -5,15 +5,16 @@
 const otpStore = new Map<string, { otp: string; attempts: number; createdAt: number }>();
 
 // Configuration
-const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
-const MAX_ATTEMPTS = 3;
+const OTP_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes (longer for testing)
+const MAX_ATTEMPTS = 10; // More attempts for testing
 
 /**
- * Format phone number consistently (add + prefix if missing)
+ * Format phone number consistently (add + prefix if missing and remove non-digits)
  */
-function formatPhoneNumber(phoneNumber: string): string {
-  // Remove any non-digit characters except +
-  const cleaned = phoneNumber.replace(/[^\d+]/g, '');
+export function formatPhoneNumber(phoneNumber: string): string {
+  // Remove any non-digit characters
+  const cleaned = phoneNumber.replace(/\D/g, '');
+  // Add + prefix if missing
   return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
 }
 
@@ -48,14 +49,17 @@ export function verifyOTP(phoneNumber: string, inputOTP: string): boolean {
   const formattedPhone = formatPhoneNumber(phoneNumber);
   const stored = otpStore.get(formattedPhone);
   
+  console.log(`[OTP] Verifying for ${formattedPhone}, input: ${inputOTP}, stored: ${stored?.otp}`);
+  
   if (!stored) {
     console.log(`[OTP] No OTP found for ${formattedPhone}`);
     return false;
   }
   
-  // Check if OTP expired (5 minutes)
-  if (Date.now() - stored.createdAt > OTP_EXPIRY_MS) {
-    console.log(`[OTP] OTP expired for ${formattedPhone}`);
+  // Check if OTP expired (15 minutes)
+  const age = Date.now() - stored.createdAt;
+  if (age > OTP_EXPIRY_MS) {
+    console.log(`[OTP] OTP expired for ${formattedPhone} (age: ${Math.round(age/1000)}s)`);
     otpStore.delete(formattedPhone);
     return false;
   }
@@ -94,7 +98,7 @@ export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; 
     return {
       success: true,
       otp,
-      message: 'OTP generated successfully. In development mode, check server console for OTP.',
+      message: `OTP generated for ${formattedPhone}. Valid for 15 minutes.`,
     };
   } catch (error: any) {
     console.error('[OTP] Failed to generate OTP:', error);
