@@ -8,6 +8,7 @@ function OTPPageContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [resendTimer, setResendTimer] = useState(30);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
@@ -86,6 +87,7 @@ function OTPPageContent() {
   const handleResend = async () => {
     setResendTimer(30);
     setError("");
+    setSuccessMessage("");
     
     try {
       const response = await fetch("/api/whatsapp/send", {
@@ -105,6 +107,8 @@ function OTPPageContent() {
       if (data.otp) {
         console.log("Development OTP:", data.otp);
         sessionStorage.setItem("dev_otp", data.otp);
+        // Show OTP in UI for development
+        setSuccessMessage(`Development OTP: ${data.otp}`);
       }
     } catch (err: any) {
       const errorMessage = err.message || "Failed to resend OTP";
@@ -139,6 +143,12 @@ function OTPPageContent() {
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 text-sm text-center">
+              {successMessage}
             </div>
           )}
 

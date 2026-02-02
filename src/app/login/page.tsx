@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [generatedOtp, setGeneratedOtp] = useState("");
   const router = useRouter();
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -18,6 +20,8 @@ export default function LoginPage() {
     
     setIsLoading(true);
     setError("");
+    setSuccessMessage("");
+    setGeneratedOtp("");
 
     try {
       // Send OTP via API
@@ -35,19 +39,27 @@ export default function LoginPage() {
         throw new Error(data.error || "Failed to send OTP");
       }
 
-      // In development mode, show OTP in console
+      // In development mode, show OTP
       if (data.otp) {
         console.log("Development OTP:", data.otp);
         sessionStorage.setItem("dev_otp", data.otp);
+        setGeneratedOtp(data.otp);
+        setSuccessMessage("OTP sent! Check the code below:");
+      } else {
+        // Navigate to OTP verification page
+        router.push(`/otp?phone=${encodeURIComponent(phoneNumber.trim())}`);
       }
-
-      // Navigate to OTP verification page
-      router.push(`/otp?phone=${encodeURIComponent(phoneNumber.trim())}`);
     } catch (err: any) {
       const errorMessage = err.message || "Failed to send OTP. Please try again.";
       setError(errorMessage);
       console.error("OTP send error:", err);
       setIsLoading(false);
+    }
+  };
+
+  const handleUseOtp = () => {
+    if (generatedOtp) {
+      router.push(`/otp?phone=${encodeURIComponent(phoneNumber.trim())}`);
     }
   };
 
@@ -75,6 +87,21 @@ export default function LoginPage() {
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-4 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+              <p className="text-green-500 text-sm text-center mb-2">{successMessage}</p>
+              <div className="bg-green-500/20 rounded-lg p-3 text-center">
+                <p className="text-3xl font-bold text-green-500 tracking-widest">{generatedOtp}</p>
+              </div>
+              <Button
+                onClick={handleUseOtp}
+                className="w-full mt-3 bg-green-500 hover:bg-green-600 text-white"
+              >
+                Enter OTP
+              </Button>
             </div>
           )}
 
