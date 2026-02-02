@@ -34,8 +34,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser = localStorage.getItem("auth_user");
 
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setToken(storedToken);
+        setUser(parsedUser);
+      } catch (e) {
+        // Invalid JSON in localStorage, clear corrupted data
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
+      }
     }
     setIsLoading(false);
   }, []);
