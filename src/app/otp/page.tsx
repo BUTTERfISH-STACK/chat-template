@@ -57,24 +57,28 @@ function OTPPageContent() {
 
   /**
    * Safely parse JSON response with error handling
+   * This function is more forgiving and will attempt to parse
+   * even if content-type is not set, but handles all error cases
    */
   async function safeJsonParse(response: Response): Promise<ApiResponse> {
-    const contentType = response.headers.get("content-type");
-    
-    // Check if response has JSON content-type
-    if (!contentType || !contentType.includes("application/json")) {
-      // Try to get text for error reporting
-      const text = await response.text().catch(() => "Unknown error");
-      return { error: `Server returned non-JSON response: ${text.substring(0, 100)}` };
-    }
-    
     try {
-      return await response.json() as ApiResponse;
-    } catch (parseError) {
-      if (parseError instanceof SyntaxError) {
-        return { error: "Failed to parse server response" };
+      // First try to get the response text
+      const text = await response.text();
+      
+      // If empty response
+      if (!text || text.trim() === '') {
+        return { error: 'Server returned empty response' };
       }
-      return { error: "An unexpected error occurred" };
+      
+      // Try to parse as JSON
+      try {
+        return JSON.parse(text) as ApiResponse;
+      } catch (parseError) {
+        // If parsing fails, return the text as an error message
+        return { error: `Server error: ${text.substring(0, 200)}` };
+      }
+    } catch (readError) {
+      return { error: 'Failed to read server response' };
     }
   }
 
