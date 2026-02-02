@@ -20,8 +20,12 @@ let isConnected = false;
 let qrCodeData: string | null = null;
 
 /**
- * Initialize WhatsApp connection with authentication
+ * Format phone number consistently (add + prefix if missing)
  */
+function formatPhoneNumber(phoneNumber: string): string {
+  return phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+}
+
 export async function initWhatsApp(): Promise<void> {
   if (sock && isConnected) {
     console.log('[WhatsApp] Already connected');
@@ -37,7 +41,6 @@ export async function initWhatsApp(): Promise<void> {
       printQRInTerminal: true,
     });
 
-    // Listen for connection updates
     sock.ev.on('connection.update' as any, (update: any) => {
       const { connection, lastDisconnect } = update;
 
@@ -57,10 +60,7 @@ export async function initWhatsApp(): Promise<void> {
       }
     });
 
-    // Listen for credentials update
     sock.ev.on('creds.update' as any, saveCreds as any);
-
-    // Listen for QR code
     sock.ev.on('qr' as any, (qr: string) => {
       console.log('[WhatsApp] QR Code generated');
       qrCodeData = qr;
@@ -71,46 +71,39 @@ export async function initWhatsApp(): Promise<void> {
   }
 }
 
-/**
- * Get QR code for WhatsApp authentication
- */
 export function getQRCode(): string | null {
   return qrCodeData;
 }
 
-/**
- * Check if WhatsApp is connected
- */
 export function isWhatsAppConnected(): boolean {
   return isConnected;
 }
 
-/**
- * Generate and store OTP
- */
 export function generateOTP(phoneNumber: string): string {
+  const formattedPhone = formatPhoneNumber(phoneNumber);
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  otpStore.set(phoneNumber, {
+  otpStore.set(formattedPhone, {
     otp,
     attempts: 0,
     createdAt: Date.now(),
   });
+  console.log(`[OTP] Generated for ${formattedPhone}: ${otp}`);
   return otp;
 }
 
-/**
- * Verify OTP
- */
 export function verifyOTP(phoneNumber: string, inputOTP: string): boolean {
-  const stored = otpStore.get(phoneNumber);
+  const formattedPhone = formatPhoneNumber(phoneNumber);
+  const stored = otpStore.get(formattedPhone);
   
   if (!stored) {
+    console.log(`[OTP] No OTP found for ${formattedPhone}`);
     return false;
   }
 
   // Check if OTP expired (5 minutes)
   if (Date.now() - stored.createdAt > 5 * 60 * 1000) {
-    otpStore.delete(phoneNumber);
+    console.log(`[OTP] OTP expired for ${formattedPhone}`);
+    otpStore.delete(formattedPhone);
     return false;
   }
 
@@ -118,30 +111,27 @@ export function verifyOTP(phoneNumber: string, inputOTP: string): boolean {
   stored.attempts++;
 
   if (stored.attempts > MAX_OTP_ATTEMPTS) {
-    otpStore.delete(phoneNumber);
+    console.log(`[OTP] Too many attempts for ${formattedPhone}`);
+    otpStore.delete(formattedPhone);
     return false;
   }
 
   if (stored.otp === inputOTP) {
-    otpStore.delete(phoneNumber);
+    console.log(`[OTP] Valid OTP for ${formattedPhone}`);
+    otpStore.delete(formattedPhone);
     return true;
   }
 
+  console.log(`[OTP] Invalid OTP for ${formattedPhone}. Expected: ${stored.otp}, Got: ${inputOTP}`);
   return false;
 }
 
-/**
- * Send OTP via WhatsApp
- */
 export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; otp?: string; message: string }> {
-  // Format phone number for WhatsApp
-  const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+  const formattedPhone = formatPhoneNumber(phoneNumber);
 
   if (!isConnected || !sock) {
     console.log('[WhatsApp] Not connected, initializing...');
     await initWhatsApp();
-    
-    // Give it a moment to connect
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
@@ -182,9 +172,6 @@ export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; 
   }
 }
 
-/**
- * Disconnect WhatsApp
- */
 export function disconnectWhatsApp(): void {
   if (sock) {
     sock.end(null);

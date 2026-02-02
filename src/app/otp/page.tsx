@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 
 function OTPPageContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(30);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
@@ -53,18 +53,67 @@ function OTPPageContent() {
     if (otpCode.length !== 6) return;
     
     setIsLoading(true);
-    
-    // Simulate OTP verification
-    setTimeout(() => {
+    setError("");
+
+    try {
+      // Verify OTP via API
+      const response = await fetch("/api/whatsapp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber, otp: otpCode }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Invalid OTP");
+      }
+
+      if (data.valid) {
+        // Check for development OTP
+        const devOtp = sessionStorage.getItem("dev_otp");
+        if (devOtp && devOtp !== otpCode) {
+          // Development mode - still verify but warn
+          console.warn("Development mode: OTP mismatch. Expected:", devOtp);
+        }
+        
+        // Navigate to chat on success
+        router.push("/chat");
+      } else {
+        throw new Error("Invalid OTP");
+      }
+    } catch (err: any) {
+      setError(err.message || "Invalid OTP. Please try again.");
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
       setIsLoading(false);
-      router.push("/chat");
-    }, 1500);
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setResendTimer(30);
-    // Simulate resending OTP
-    console.log("OTP resent to", phoneNumber);
+    setError("");
+    
+    try {
+      const response = await fetch("/api/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (data.otp) {
+        console.log("Development OTP:", data.otp);
+        sessionStorage.setItem("dev_otp", data.otp);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to resend OTP");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to resend OTP");
+    }
   };
 
   return (
@@ -89,6 +138,12 @@ function OTPPageContent() {
               <span className="text-primary">{phoneNumber}</span>
             </p>
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
