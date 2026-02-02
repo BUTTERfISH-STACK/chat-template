@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -16,12 +17,35 @@ export default function LoginPage() {
     if (!phoneNumber.trim()) return;
     
     setIsLoading(true);
-    
-    // Simulate OTP sending
-    setTimeout(() => {
+    setError("");
+
+    try {
+      // Send OTP via WhatsApp Baileys
+      const response = await fetch("/api/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: phoneNumber.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send OTP");
+      }
+
+      // In development mode, show OTP in console
+      if (data.otp) {
+        console.log("Development OTP:", data.otp);
+        // Store OTP in sessionStorage for development
+        sessionStorage.setItem("dev_otp", data.otp);
+      }
+
+      // Navigate to OTP verification page
+      router.push(`/otp?phone=${encodeURIComponent(phoneNumber.trim())}`);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP. Please try again.");
       setIsLoading(false);
-      router.push(`/otp?phone=${encodeURIComponent(phoneNumber)}`);
-    }, 1500);
+    }
   };
 
   return (
@@ -44,6 +68,12 @@ export default function LoginPage() {
             <h2 className="text-xl font-semibold text-foreground">Welcome Back</h2>
             <p className="text-sm text-muted-foreground mt-1">Enter your phone number to continue</p>
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handlePhoneSubmit} className="space-y-4">
             <div className="space-y-2">
