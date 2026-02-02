@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const formattedPhone = formatPhoneNumber(body.phoneNumber);
     console.log(`[API] Verify OTP request for: ${formattedPhone}, otp: ${body.otp}`);
     
-    // Verify OTP
+    // Verify OTP using unified function
     const isValid = verifyOTP(formattedPhone, body.otp);
     
     return NextResponse.json({

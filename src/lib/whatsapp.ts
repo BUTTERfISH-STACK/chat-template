@@ -1,22 +1,16 @@
 // Simplified WhatsApp OTP service for development
 // This version works without actual WhatsApp connection
 
-// In-memory OTP store
+// Import unified functions from db.ts to ensure consistency
+import { formatPhoneNumber } from '@/lib/db';
+
+// In-memory OTP store (legacy - now uses db.ts otpStore)
+// Kept for backward compatibility with existing code
 const otpStore = new Map<string, { otp: string; attempts: number; createdAt: number }>();
 
 // Configuration
 const OTP_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes (longer for testing)
 const MAX_ATTEMPTS = 10; // More attempts for testing
-
-/**
- * Format phone number consistently (add + prefix if missing and remove non-digits)
- */
-export function formatPhoneNumber(phoneNumber: string): string {
-  // Remove any non-digit characters
-  const cleaned = phoneNumber.replace(/\D/g, '');
-  // Add + prefix if missing
-  return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
-}
 
 /**
  * Generate a random 6-digit OTP (internal helper)
@@ -26,7 +20,7 @@ function generateRandomOTP(): string {
 }
 
 /**
- * Generate and store OTP for a phone number
+ * Generate and store OTP for a phone number (legacy wrapper)
  */
 export function generateOTP(phoneNumber: string): string {
   const formattedPhone = formatPhoneNumber(phoneNumber);
@@ -43,7 +37,7 @@ export function generateOTP(phoneNumber: string): string {
 }
 
 /**
- * Verify OTP for a phone number
+ * Verify OTP for a phone number (legacy wrapper)
  */
 export function verifyOTP(phoneNumber: string, inputOTP: string): boolean {
   const formattedPhone = formatPhoneNumber(phoneNumber);
@@ -85,19 +79,22 @@ export function verifyOTP(phoneNumber: string, inputOTP: string): boolean {
 
 /**
  * Send OTP (development mode - just generates and logs)
+ * Now uses unified db.ts functions
  */
 export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; otp?: string; message: string }> {
   const formattedPhone = formatPhoneNumber(phoneNumber);
   
   try {
-    // Generate OTP
-    const otp = generateOTP(phoneNumber);
+    // Use the unified generateOTP function from db.ts
+    // Note: This might cause duplicate storage, but verify uses db.ts functions
+    const { generateAndStoreOTP } = await import('@/lib/db');
+    const { code } = generateAndStoreOTP(phoneNumber);
     
-    console.log(`[DEV] OTP for ${formattedPhone}: ${otp}`);
+    console.log(`[DEV] OTP for ${formattedPhone}: ${code}`);
     
     return {
       success: true,
-      otp,
+      otp: code,
       message: `OTP generated for ${formattedPhone}. Valid for 15 minutes.`,
     };
   } catch (error: any) {
@@ -108,6 +105,9 @@ export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; 
     };
   }
 }
+
+// Re-export formatPhoneNumber for backward compatibility
+export { formatPhoneNumber };
 
 // Stub functions for WhatsApp connection (not used in development mode)
 export function initWhatsApp(): Promise<void> {

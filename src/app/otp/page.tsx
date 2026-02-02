@@ -90,8 +90,8 @@ function OTPPageContent() {
       const formattedPhone = formatPhoneNumber(phoneNumber);
       console.log(`[OTP] Verifying for: ${formattedPhone}, code: ${otpCode}`);
       
-      // Verify OTP via API
-      const response = await fetch("/api/whatsapp/verify", {
+      // Verify OTP via API - using unified auth endpoint
+      const response = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber: formattedPhone, otp: otpCode }),
@@ -101,7 +101,7 @@ function OTPPageContent() {
       const data = await response.json();
 
       // Handle non-OK responses
-      if (!response.ok || !data.valid) {
+      if (!response.ok || !data.success) {
         throw new Error(data.error || data.message || "Invalid OTP");
       }
 
@@ -128,7 +128,8 @@ function OTPPageContent() {
       // Format phone number consistently
       const formattedPhone = formatPhoneNumber(phoneNumber);
       
-      const response = await fetch("/api/whatsapp/send", {
+      // Resend OTP via API - using unified auth endpoint
+      const response = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber: formattedPhone }),

@@ -29,8 +29,8 @@ export default function LoginPage() {
       const formattedPhone = formatPhoneNumber(phoneNumber.trim());
       console.log(`[Login] Sending OTP request for: ${formattedPhone}`);
       
-      // Send OTP via API
-      const response = await fetch("/api/whatsapp/send", {
+      // Send OTP via API - using unified auth endpoint
+      const response = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber: formattedPhone }),

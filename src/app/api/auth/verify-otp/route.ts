@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockDb, generateId } from '@/lib/db';
+import { verifyOTP, formatPhoneNumber, generateId } from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -15,51 +15,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find OTP record in mock database
-    const otpRecord = mockDb.otps.get(phoneNumber);
+    // Format phone number consistently
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    console.log(`[Verify-OTP] Verifying for: ${formattedPhone}, code: ${otp}`);
 
-    if (!otpRecord) {
+    // Verify OTP using unified function
+    const result = verifyOTP(formattedPhone, otp);
+
+    if (!result.valid) {
+      console.log(`[Verify-OTP] Failed: ${result.error}`);
       return NextResponse.json(
-        { success: false, error: 'OTP not found or expired' },
+        { success: false, error: result.error || 'Invalid OTP' },
         { status: 400 }
       );
     }
 
-    // Check if OTP is expired
-    if (otpRecord.expiresAt < new Date()) {
-      return NextResponse.json(
-        { success: false, error: 'OTP has expired' },
-        { status: 400 }
-      );
-    }
-
-    // Check if OTP is already used
-    if (otpRecord.used) {
-      return NextResponse.json(
-        { success: false, error: 'OTP has already been used' },
-        { status: 400 }
-      );
-    }
-
-    // Verify OTP
-    if (otpRecord.code !== otp) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid OTP' },
-        { status: 400 }
-      );
-    }
-
-    // Mark OTP as used
-    otpRecord.used = true;
+    console.log(`[Verify-OTP] Success for: ${formattedPhone}`);
 
     // Find or create user in mock database
-    let user = Array.from(mockDb.users.values()).find((u: any) => u.phone === phoneNumber);
+    // Note: We're importing mockDb separately to avoid circular dependencies
+    const { mockDb } = await import('@/lib/db');
+    let user = Array.from(mockDb.users.values()).find((u: any) => u.phone === formattedPhone);
 
     if (!user) {
       user = {
         id: generateId(),
-        phone: phoneNumber,
-        name: phoneNumber,
+        phone: formattedPhone,
+        name: formattedPhone,
         avatar: null,
         bio: null,
         status: 'OFFLINE',
@@ -68,6 +50,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       };
       mockDb.users.set(user.id, user);
+      console.log(`[Verify-OTP] Created new user: ${user.id}`);
     }
 
     // Generate JWT token
@@ -87,7 +70,7 @@ export async function POST(request: NextRequest) {
         avatar: user.avatar,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error verifying OTP:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

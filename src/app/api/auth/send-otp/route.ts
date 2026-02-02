@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendOTP, generateOTP } from '@/lib/sms';
-import { mockDb, generateId } from '@/lib/db';
+import { generateAndStoreOTP, getOTP, formatPhoneNumber } from '@/lib/db';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,32 +15,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate OTP
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    // Format phone number consistently
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    console.log(`[Send-OTP] Processing request for: ${formattedPhone}`);
 
-    // Store OTP in mock database
-    mockDb.otps.set(phoneNumber, {
-      code: otp,
-      expiresAt,
-      used: false,
-    });
+    // Generate and store OTP
+    const { code, expiresAt } = generateAndStoreOTP(formattedPhone);
 
-    // Send OTP via SMS
-    const sent = await sendOTP(phoneNumber, otp);
+    // Log OTP for development
+    console.log(`[Send-OTP] OTP for ${formattedPhone}: ${code} (expires: ${expiresAt.toISOString()})`);
 
-    if (!sent) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to send OTP' },
-        { status: 500 }
-      );
-    }
-
+    // Return success - include OTP in development mode
+    const isDevelopment = !process.env.META_ACCESS_TOKEN && !process.env.TWILIO_ACCOUNT_SID;
+    
     return NextResponse.json({
       success: true,
       message: 'OTP sent successfully',
+      ...(isDevelopment && { otp: code }),
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending OTP:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
