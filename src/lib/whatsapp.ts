@@ -66,8 +66,19 @@ export async function initWhatsApp(): Promise<void> {
       qrCodeData = qr;
     });
 
-  } catch (error) {
-    console.error('[WhatsApp] Initialization error:', error);
+  } catch (error: any) {
+    console.error('[WhatsApp] Initialization error:', error.message || error);
+    // Clear corrupted auth files and restart fresh
+    try {
+      if (fs.existsSync(authDir)) {
+        fs.rmSync(authDir, { recursive: true, force: true });
+        fs.mkdirSync(authDir, { recursive: true });
+      }
+    } catch (cleanupError) {
+      console.error('[WhatsApp] Failed to cleanup auth files:', cleanupError);
+    }
+    isConnected = false;
+    sock = null;
   }
 }
 
