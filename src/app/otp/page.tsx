@@ -15,11 +15,13 @@ function OTPPageContent() {
   const searchParams = useSearchParams();
   const phoneNumber = searchParams.get("phone") || "";
 
+  // Focus first input on mount
   useEffect(() => {
-    // Focus first input on mount
     inputRefs.current[0]?.focus();
-    
-    // Resend timer
+  }, []);
+
+  // Resend timer
+  useEffect(() => {
     const timer = resendTimer > 0 ? setInterval(() => {
       setResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000) : null;
@@ -36,15 +38,41 @@ function OTPPageContent() {
     newOtp[index] = value;
     setOtp(newOtp);
     
-    // Move to next input
+    // Move to next input only if value was entered (not deleted)
     if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
+      setTimeout(() => {
+        inputRefs.current[index + 1]?.focus();
+      }, 0);
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === "Backspace") {
+      // If current box is empty and not first box, move to previous
+      if (!otp[index] && index > 0) {
+        setTimeout(() => {
+          inputRefs.current[index - 1]?.focus();
+        }, 0);
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    
+    if (pastedData.length > 0) {
+      const newOtp = [...otp];
+      for (let i = 0; i < 6; i++) {
+        newOtp[i] = pastedData[i] || "";
+      }
+      setOtp(newOtp);
+      
+      // Focus the last filled input or the next one
+      const lastFilledIndex = Math.min(pastedData.length, 5);
+      setTimeout(() => {
+        inputRefs.current[lastFilledIndex]?.focus();
+      }, 0);
     }
   };
 
@@ -79,7 +107,9 @@ function OTPPageContent() {
       setError(errorMessage);
       console.error("OTP verification error:", err);
       setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 0);
       setIsLoading(false);
     }
   };
@@ -154,7 +184,10 @@ function OTPPageContent() {
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-6">
-              <div className="flex justify-center gap-2">
+              <div 
+                className="flex justify-center gap-2"
+                onPaste={handlePaste}
+              >
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -166,6 +199,7 @@ function OTPPageContent() {
                     onChange={(e) => handleInputChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     className="w-12 h-14 text-center text-2xl font-bold bg-secondary border border-border rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                    autoComplete="one-time-code"
                   />
                 ))}
               </div>
