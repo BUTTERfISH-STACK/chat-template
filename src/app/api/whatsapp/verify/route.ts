@@ -3,7 +3,16 @@ import { verifyOTP } from '@/lib/whatsapp';
 
 export async function POST(request: NextRequest) {
   try {
-    const { phoneNumber, otp } = await request.json();
+    const body = await request.text();
+    
+    if (!body) {
+      return NextResponse.json(
+        { error: 'Phone number and OTP are required' },
+        { status: 400 }
+      );
+    }
+    
+    const { phoneNumber, otp } = JSON.parse(body);
 
     if (!phoneNumber || !otp) {
       return NextResponse.json(
@@ -19,6 +28,7 @@ export async function POST(request: NextRequest) {
       message: isValid ? 'OTP verified successfully!' : 'Invalid or expired OTP',
     });
   } catch (error: any) {
+    console.error('Error in verify OTP API:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to verify OTP' },
       { status: 500 }
