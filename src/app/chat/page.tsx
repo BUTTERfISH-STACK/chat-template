@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChatList as ChatListComponent } from "@/components/ui/ChatList"
 
 interface ChatItem {
@@ -13,6 +14,7 @@ interface ChatItem {
 }
 
 export default function ChatListPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   
   const chats: ChatItem[] = [
@@ -56,7 +58,7 @@ export default function ChatListPage() {
 
   const handleChatSelect = (chatId: string) => {
     // Navigate to chat room
-    console.log(`Navigating to chat: ${chatId}`)
+    router.push(`/chat/${chatId}`)
   }
 
   const filteredChats = chats.filter(chat =>
