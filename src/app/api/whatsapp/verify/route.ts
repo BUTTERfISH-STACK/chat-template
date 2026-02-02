@@ -29,6 +29,15 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error in verify OTP API:', error);
+    
+    // Handle JSON parse errors specifically
+    if (error instanceof SyntaxError && error.message.includes('JSON')) {
+      return NextResponse.json(
+        { error: 'Invalid request format. Please provide valid JSON with phoneNumber and otp fields.' },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: error.message || 'Failed to verify OTP' },
       { status: 500 }

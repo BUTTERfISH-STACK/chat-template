@@ -63,6 +63,12 @@ function OTPPageContent() {
         body: JSON.stringify({ phoneNumber, otp: otpCode }),
       });
 
+      // Check if response is OK and has JSON content
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid server response");
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -100,6 +106,12 @@ function OTPPageContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber }),
       });
+
+      // Check if response has JSON content
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Invalid server response");
+      }
 
       const data = await response.json();
 
