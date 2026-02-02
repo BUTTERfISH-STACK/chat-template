@@ -6,6 +6,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+interface ApiResponse {
+  error?: string;
+  success?: boolean;
+  message?: string;
+  otp?: string;
+}
+
+/**
+ * Safely parse JSON response with error handling
+ */
+async function safeJsonParse(response: Response): Promise<ApiResponse> {
+  const contentType = response.headers.get("content-type");
+  
+  // Check if response has JSON content-type
+  if (!contentType || !contentType.includes("application/json")) {
+    // Try to get text for error reporting
+    const text = await response.text().catch(() => "Unknown error");
+    return { error: `Server returned non-JSON response: ${text.substring(0, 100)}` };
+  }
+  
+  try {
+    return await response.json() as ApiResponse;
+  } catch (parseError) {
+    if (parseError instanceof SyntaxError) {
+      return { error: "Failed to parse server response" };
+    }
+    return { error: "An unexpected error occurred" };
+  }
+}
+
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,10 +57,12 @@ export default function LoginPage() {
         body: JSON.stringify({ phoneNumber: phoneNumber.trim() }),
       });
 
-      const data = await response.json();
+      // Safely parse JSON response
+      const data = await safeJsonParse(response);
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to send OTP");
+      // Handle non-OK responses or parse errors
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `Server error: ${response.status}`);
       }
 
       // In development mode, show OTP in console
@@ -43,7 +75,9 @@ export default function LoginPage() {
       // Navigate to OTP verification page
       router.push(`/otp?phone=${encodeURIComponent(phoneNumber.trim())}`);
     } catch (err: any) {
-      setError(err.message || "Failed to send OTP. Please try again.");
+      const errorMessage = err.message || "Failed to send OTP. Please try again.";
+      setError(errorMessage);
+      console.error("OTP send error:", err);
       setIsLoading(false);
     }
   };

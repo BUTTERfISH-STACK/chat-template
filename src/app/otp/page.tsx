@@ -4,6 +4,14 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+interface ApiResponse<T = any> {
+  error?: string;
+  success?: boolean;
+  message?: string;
+  valid?: boolean;
+  otp?: string;
+}
+
 function OTPPageContent() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +55,29 @@ function OTPPageContent() {
     }
   };
 
+  /**
+   * Safely parse JSON response with error handling
+   */
+  async function safeJsonParse(response: Response): Promise<ApiResponse> {
+    const contentType = response.headers.get("content-type");
+    
+    // Check if response has JSON content-type
+    if (!contentType || !contentType.includes("application/json")) {
+      // Try to get text for error reporting
+      const text = await response.text().catch(() => "Unknown error");
+      return { error: `Server returned non-JSON response: ${text.substring(0, 100)}` };
+    }
+    
+    try {
+      return await response.json() as ApiResponse;
+    } catch (parseError) {
+      if (parseError instanceof SyntaxError) {
+        return { error: "Failed to parse server response" };
+      }
+      return { error: "An unexpected error occurred" };
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = otp.join("");
@@ -63,16 +94,12 @@ function OTPPageContent() {
         body: JSON.stringify({ phoneNumber, otp: otpCode }),
       });
 
-      // Check if response is OK and has JSON content
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid server response");
-      }
+      // Safely parse JSON response
+      const data = await safeJsonParse(response);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Invalid OTP");
+      // Handle non-OK responses or parse errors
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `Server error: ${response.status}`);
       }
 
       if (data.valid) {
@@ -86,10 +113,12 @@ function OTPPageContent() {
         // Navigate to chat on success
         router.push("/chat");
       } else {
-        throw new Error("Invalid OTP");
+        throw new Error(data.message || "Invalid OTP");
       }
     } catch (err: any) {
-      setError(err.message || "Invalid OTP. Please try again.");
+      const errorMessage = err.message || "Invalid OTP. Please try again.";
+      setError(errorMessage);
+      console.error("OTP verification error:", err);
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
       setIsLoading(false);
@@ -107,24 +136,26 @@ function OTPPageContent() {
         body: JSON.stringify({ phoneNumber }),
       });
 
-      // Check if response has JSON content
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid server response");
-      }
+      // Safely parse JSON response
+      const data = await safeJsonParse(response);
 
-      const data = await response.json();
+      // Handle non-OK responses or parse errors
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `Server error: ${response.status}`);
+      }
 
       if (data.otp) {
         console.log("Development OTP:", data.otp);
         sessionStorage.setItem("dev_otp", data.otp);
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to resend OTP");
+      if (!data.success) {
+        throw new Error(data.message || "Failed to resend OTP");
       }
     } catch (err: any) {
-      setError(err.message || "Failed to resend OTP");
+      const errorMessage = err.message || "Failed to resend OTP";
+      setError(errorMessage);
+      console.error("OTP resend error:", err);
     }
   };
 
