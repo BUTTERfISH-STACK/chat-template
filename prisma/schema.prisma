@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  phone         String    @unique
+  name          String?
+  avatar        String?
+  bio           String?
+  status        UserStatus @default(OFFLINE)
+  lastSeen      DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sentMessages     Message[]     @relation("SentMessages")
+  receivedMessages Message[]     @relation("ReceivedMessages")
+  conversations    ConversationParticipant[]
+  stores           Store[]
+  orders           Order[]
+  reviews          Review[]
+}
+
+model Conversation {
+  id          String    @id @default(uuid())
+  name        String?
+  type        ConversationType @default(DIRECT)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id              String    @id @default(uuid())
+  userId          String
+  conversationId  String
+  joinedAt        DateTime  @default(now())
+  lastReadAt      DateTime?
+
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+}
+
+model Message {
+  id              String    @id @default(uuid())
+  content         String
+  type            MessageType @default(TEXT)
+  mediaUrl        String?
+  senderId        String
+  receiverId      String?
+  conversationId  String?
+  isRead          Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  sender          User    @relation("SentMessages", fields: [senderId], references: [id])
+  receiver        User?   @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  conversation    Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Store {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  logo        String?
+  phone       String
+  email       String
+  address     String?
+  ownerId     String
+  rating      Float     @default(0)
+  totalSales  Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  owner        User      @relation(fields: [ownerId], references: [id])
+  products     Product[]
+  orders       Order[]
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  image       String?
+  category    String
+  stock       Int       @default(0)
+  storeId     String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  store        Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+  reviews      Review[]
+}
+
+model Order {
+  id          String    @id @default(uuid())
+  buyerId     String
+  storeId     String
+  totalAmount Float
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  buyer    User       @relation(fields: [buyerId], references: [id])
+  store    Store      @relation(fields: [storeId], references: [id])
+  items    OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Review {
+  id        String    @id @default(uuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?
+  createdAt DateTime  @default(now())
+
+  user      User    @relation(fields: [userId], references: [id])
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model OTP {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum UserStatus {
+  ONLINE
+  OFFLINE
+  AWAY
+  BUSY
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  AUDIO
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
