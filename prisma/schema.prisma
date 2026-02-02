@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model User {
@@ -12,7 +12,7 @@ model User {
   name          String?
   avatar        String?
   bio           String?
-  status        UserStatus @default(OFFLINE)
+  status        String    @default("OFFLINE")
   lastSeen      DateTime  @default(now())
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -28,7 +28,7 @@ model User {
 model Conversation {
   id          String    @id @default(uuid())
   name        String?
-  type        ConversationType @default(DIRECT)
+  type        String    @default("DIRECT")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -52,7 +52,7 @@ model ConversationParticipant {
 model Message {
   id              String    @id @default(uuid())
   content         String
-  type            MessageType @default(TEXT)
+  type            String    @default("TEXT")
   mediaUrl        String?
   senderId        String
   receiverId      String?
@@ -108,7 +108,7 @@ model Order {
   buyerId     String
   storeId     String
   totalAmount Float
-  status      OrderStatus @default(PENDING)
+  status      String    @default("PENDING")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -149,32 +149,4 @@ model OTP {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
-}
-
-enum UserStatus {
-  ONLINE
-  OFFLINE
-  AWAY
-  BUSY
-}
-
-enum ConversationType {
-  DIRECT
-  GROUP
-}
-
-enum MessageType {
-  TEXT
-  IMAGE
-  VIDEO
-  FILE
-  AUDIO
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  SHIPPED
-  DELIVERED
-  CANCELLED
 }
