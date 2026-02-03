@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendOTP, checkRateLimit, formatPhoneNumber } from '@/lib/otp-premium';
+import { sendOTP as generateAndStoreOTP, checkRateLimit, formatPhoneNumber } from '@/lib/otp-premium';
+import { sendOTP as sendSMS, generateOTP } from '@/lib/sms';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,14 +23,34 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Send-OTP] Processing request for: ${formattedPhone} via ${method}`);
 
-    // Send OTP using premium service
-    const result = await sendOTP(formattedPhone, method, email, isNewUser);
-
-    if (!result.success) {
+    // Check rate limit
+    const rateLimit = checkRateLimit(formattedPhone);
+    if (rateLimit.limited) {
       return NextResponse.json(
-        { success: false, error: result.message },
+        { success: false, error: `Too many requests. Try again in ${rateLimit.retryAfter} seconds.` },
         { status: 429 }
       );
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    console.log(`[Send-OTP] Generated OTP for ${formattedPhone}: ${otp}`);
+
+    // Store OTP using premium service
+    const storeResult = await generateAndStoreOTP(formattedPhone, method, email, isNewUser, otp);
+
+    if (!storeResult.success) {
+      return NextResponse.json(
+        { success: false, error: storeResult.message },
+        { status: 429 }
+      );
+    }
+
+    // Send OTP via SMS/WhatsApp service
+    const smsSent = await sendSMS(formattedPhone, otp);
+    
+    if (!smsSent) {
+      console.warn(`[Send-OTP] SMS sending failed for ${formattedPhone}, OTP will still work in dev mode`);
     }
 
     // In development, return the OTP
@@ -37,12 +58,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: result.message,
-      expiresAt: result.expiresAt,
-      method: result.method,
-      ...(isDevelopment && { otp: result.message.match(/\\d{6}/)?.[0] }), // Extract OTP from message in dev
-      ...(result.backupCodes && { backupCodes: result.backupCodes }),
-      ...(result.totpQrCode && { totpQrCode: result.totpQrCode }),
+      message: smsSent ? `OTP sent via ${method}` : 'OTP generated (check server logs)',
+      expiresAt: storeResult.expiresAt,
+      method: method,
+      ...(isDevelopment && { otp: otp }),
+      ...(storeResult.backupCodes && { backupCodes: storeResult.backupCodes }),
+      ...(storeResult.totpQrCode && { totpQrCode: storeResult.totpQrCode }),
     });
   } catch (error: any) {
     console.error('Error sending OTP:', error);

@@ -308,7 +308,8 @@ export async function sendOTP(
   phone: string,
   method: 'whatsapp' | 'sms' | 'email' | 'totp' = 'whatsapp',
   email?: string,
-  isNewUser: boolean = false
+  isNewUser: boolean = false,
+  otp?: string
 ): Promise<SendOTPResult> {
   const formattedPhone = formatPhoneNumber(phone);
   if (!formattedPhone) {
@@ -325,9 +326,9 @@ export async function sendOTP(
     };
   }
 
-  // Generate OTP
-  const otp = generateSecureOTP();
-  const hashedOTP = hashOTP(otp);
+  // Use provided OTP or generate one
+  const otpCode = otp || generateSecureOTP();
+  const hashedOTP = hashOTP(otpCode);
   const now = Date.now();
   const expiresAt = new Date(now + CONFIG.OTP_EXPIRY_SECONDS * 1000);
 
@@ -365,15 +366,9 @@ export async function sendOTP(
   }
 
   // Log OTP (in development)
-  console.log(`[OTP] Generated for ${formattedPhone} via ${method}: ${otp} (expires: ${expiresAt.toISOString()})`);
+  console.log(`[OTP] Generated for ${formattedPhone} via ${method}: ${otpCode} (expires: ${expiresAt.toISOString()})`);
   if (backupCodes) {
     console.log(`[OTP] Backup codes generated: ${backupCodes.join(', ')}`);
-  }
-
-  // In production, send via SMS/WhatsApp/Email
-  // For now, we just log it
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`[OTP] ${method.toUpperCase()} would be sent to ${formattedPhone}: ${otp}`);
   }
 
   return {
