@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateAndStoreOTP, getOTP, formatPhoneNumber } from '@/lib/db';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+import { sendOTP, checkRateLimit, formatPhoneNumber } from '@/lib/otp-premium';
 
 export async function POST(request: NextRequest) {
   try {
-    const { phoneNumber } = await request.json();
+    const { phoneNumber, method = 'whatsapp', email, isNewUser = false } = await request.json();
 
     if (!phoneNumber) {
       return NextResponse.json(
@@ -15,23 +12,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Format phone number consistently
     const formattedPhone = formatPhoneNumber(phoneNumber);
-    console.log(`[Send-OTP] Processing request for: ${formattedPhone}`);
+    if (!formattedPhone) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid phone number format' },
+        { status: 400 }
+      );
+    }
 
-    // Generate and store OTP
-    const { code, expiresAt } = generateAndStoreOTP(formattedPhone);
+    console.log(`[Send-OTP] Processing request for: ${formattedPhone} via ${method}`);
 
-    // Log OTP for development
-    console.log(`[Send-OTP] OTP for ${formattedPhone}: ${code} (expires: ${expiresAt.toISOString()})`);
+    // Send OTP using premium service
+    const result = await sendOTP(formattedPhone, method, email, isNewUser);
 
-    // Return success - include OTP in development mode
-    const isDevelopment = !process.env.META_ACCESS_TOKEN && !process.env.TWILIO_ACCOUNT_SID;
-    
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.message },
+        { status: 429 }
+      );
+    }
+
+    // In development, return the OTP
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
     return NextResponse.json({
       success: true,
-      message: 'OTP sent successfully',
-      ...(isDevelopment && { otp: code }),
+      message: result.message,
+      expiresAt: result.expiresAt,
+      method: result.method,
+      ...(isDevelopment && { otp: result.message.match(/\\d{6}/)?.[0] }), // Extract OTP from message in dev
+      ...(result.backupCodes && { backupCodes: result.backupCodes }),
+      ...(result.totpQrCode && { totpQrCode: result.totpQrCode }),
     });
   } catch (error: any) {
     console.error('Error sending OTP:', error);
