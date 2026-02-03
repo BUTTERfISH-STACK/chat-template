@@ -295,19 +295,16 @@ export const marketplaceAPI = {
 }
 
 export const authAPI = {
-  sendOTP: async (phoneNumber: string): Promise<{ success: boolean; message: string }> => {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    console.log(`OTP sent to ${phoneNumber}`)
-    return { success: true, message: "OTP sent successfully" }
-  },
-
-  verifyOTP: async (phoneNumber: string, otp: string): Promise<{ success: boolean; token: string }> => {
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    // Simulate OTP verification
-    if (otp === "123456") {
-      return { success: true, token: "mock-jwt-token" }
+  login: async (phoneNumber: string): Promise<{ success: boolean; token: string; user: any }> => {
+    await new Promise(resolve => setTimeout(resolve, 500))
+    const crypto = require('crypto');
+    const userId = crypto.createHash('md5').update(phoneNumber).digest('hex').substring(0, 16);
+    const token = crypto.randomBytes(32).toString('hex');
+    return { 
+      success: true, 
+      token, 
+      user: { id: userId, phone: phoneNumber, name: phoneNumber } 
     }
-    return { success: false, token: "" }
   },
 
   logout: async (): Promise<void> => {

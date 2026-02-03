@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initWhatsApp, getQRCode, isWhatsAppConnected, sendOTP } from '@/lib/whatsapp';
+import { initWhatsApp, getQRCode, isWhatsAppConnected } from '@/lib/whatsapp';
 
 export async function GET() {
   try {
