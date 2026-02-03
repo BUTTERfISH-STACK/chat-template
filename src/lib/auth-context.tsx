@@ -15,8 +15,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (phoneNumber: string) => Promise<void>;
-  verifyOTP: (phoneNumber: string, otp: string) => Promise<boolean>;
+  login: (phoneNumber: string, name?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -47,40 +46,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (phoneNumber: string) => {
-    const response = await fetch("/api/auth/send-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber }),
-    });
+  const login = async (phoneNumber: string, name?: string) => {
+    // Format phone number
+    const digits = phoneNumber.replace(/\D/g, '');
+    const formattedPhone = digits.length >= 10 ? `+${digits}` : phoneNumber;
 
-    const data = await response.json();
+    // Generate user ID and token
+    const crypto = require('crypto');
+    const userId = crypto.createHash('md5').update(formattedPhone).digest('hex').substring(0, 16);
+    const authToken = crypto.randomBytes(32).toString('hex');
 
-    if (!data.success) {
-      throw new Error(data.error || "Failed to send OTP");
-    }
-  };
-
-  const verifyOTP = async (phoneNumber: string, otp: string) => {
-    const response = await fetch("/api/auth/verify-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber, otp }),
-    });
-
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.error || "Invalid OTP");
-    }
+    const userData: User = {
+      id: userId,
+      phone: formattedPhone,
+      name: name || formattedPhone,
+      avatar: null,
+    };
 
     // Store auth data
-    setToken(data.token);
-    setUser(data.user);
-    localStorage.setItem("auth_token", data.token);
-    localStorage.setItem("auth_user", JSON.stringify(data.user));
-
-    return true;
+    setToken(authToken);
+    setUser(userData);
+    localStorage.setItem("auth_token", authToken);
+    localStorage.setItem("auth_user", JSON.stringify(userData));
   };
 
   const logout = () => {
@@ -99,7 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         login,
-        verifyOTP,
         logout,
       }}
     >
