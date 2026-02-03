@@ -9,16 +9,43 @@ import { Input } from "@/components/ui/input";
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [phoneOrEmail, setPhoneOrEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [error, setError] = useState("");
+
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, "");
+    
+    // Format as phone number
+    if (digits.length === 0) return "";
+    if (digits.length <= 3) return `+${digits}`;
+    if (digits.length <= 6) return `+${digits.slice(0, 3)} ${digits.slice(3)}`;
+    return `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setPhoneNumber(formatted);
+    setError("");
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // Simulate login
+    // Validate phone number
+    const digits = phoneNumber.replace(/\D/g, "");
+    if (digits.length < 10) {
+      setError("Please enter a valid phone number");
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Simulate sending OTP
     setTimeout(() => {
-      router.push("/");
+      // Store phone number in session storage for OTP verification
+      sessionStorage.setItem("phoneNumber", phoneNumber);
+      router.push("/otp");
     }, 1500);
   };
 
@@ -33,35 +60,37 @@ export default function LoginPage() {
         </svg>
       </div>
 
-      {/* Login Form */}
+      {/* Welcome Text */}
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-semibold mb-2">Welcome back!</h1>
+        <p className="text-muted-foreground">Sign in with your phone number</p>
+      </div>
+
+      {/* Phone Login Form */}
       <form onSubmit={handleLogin} className="w-full max-w-sm">
-        <Input
-          type="text"
-          placeholder="Phone number, username, or email"
-          value={phoneOrEmail}
-          onChange={(e) => setPhoneOrEmail(e.target.value)}
-          className="mb-2 bg-secondary border-border"
-        />
-        <Input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mb-4 bg-secondary border-border"
-        />
+        <div className="mb-4">
+          <Input
+            type="tel"
+            placeholder="+1 234 567 8900"
+            value={phoneNumber}
+            onChange={handlePhoneChange}
+            className="bg-secondary border-border text-center text-lg py-6"
+          />
+          {error && <p className="text-sm text-destructive mt-2">{error}</p>}
+        </div>
         
         <Button
           type="submit"
-          className="w-full font-semibold"
-          disabled={isLoading || !phoneOrEmail || !password}
+          className="w-full font-semibold py-6"
+          disabled={isLoading || phoneNumber.length < 10}
         >
           {isLoading ? (
             <div className="flex items-center justify-center gap-2">
               <div className="ig-loader" />
-              <span>Logging in...</span>
+              <span>Sending code...</span>
             </div>
           ) : (
-            "Log in"
+            "Continue"
           )}
         </Button>
       </form>
@@ -73,18 +102,13 @@ export default function LoginPage() {
         <div className="flex-1 border-t border-border" />
       </div>
 
-      {/* Facebook Login */}
-      <button className="flex items-center gap-2 text-primary font-semibold mb-6">
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-        </svg>
-        Log in with Facebook
-      </button>
-
-      {/* Forgot Password */}
-      <button className="text-sm text-primary mb-6">
-        Forgot password?
-      </button>
+      {/* Email Login Link */}
+      <Link 
+        href="/login/email" 
+        className="text-primary font-semibold text-sm mb-6"
+      >
+        Sign in with email instead
+      </Link>
 
       {/* Sign Up Link */}
       <div className="w-full max-w-sm p-4 bg-card rounded-lg border border-border text-center">
@@ -120,7 +144,7 @@ export default function LoginPage() {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-xs text-muted-foreground">
-          © 2024 Vellon X from Meta
+          © 2024 Vellon X
         </p>
       </div>
     </div>

@@ -6,22 +6,16 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { InstagramNav, InstagramNavBar } from "@/components/ui/InstagramNav";
+import { InstagramNavBar } from "@/components/ui/InstagramNav";
+import { useAuth } from "@/lib/auth-context";
 
 // Types
-interface User {
+interface Contact {
   id: string;
-  username: string;
   name: string;
-  email?: string;
+  phone: string;
   avatar?: string;
-  bio?: string;
-  website?: string;
-  followers: number;
-  following: number;
-  posts: number;
-  isVerified?: boolean;
-  isBusiness?: boolean;
+  status?: "online" | "offline";
 }
 
 interface Post {
@@ -29,8 +23,6 @@ interface Post {
   imageUrl: string;
   likes: number;
   comments: number;
-  caption?: string;
-  timestamp: string;
 }
 
 interface Highlight {
@@ -40,52 +32,68 @@ interface Highlight {
   isViewed?: boolean;
 }
 
-// Mock user data - would come from API in production
-const mockUser: User = {
-  id: "1",
-  username: "johndoe",
-  name: "John Doe",
-  email: "john.doe@example.com",
-  avatar: "/api/placeholder/150/150",
-  bio: "Developer | Tech Enthusiast | Creating amazing apps",
-  website: "johndoe.com",
-  followers: 1234,
-  following: 567,
-  posts: 42,
-  isVerified: true,
-  isBusiness: true
-};
-
+// Mock highlights
 const mockHighlights: Highlight[] = [
-  { id: "1", title: "Travel", imageUrl: "/api/placeholder/100/100", isViewed: false },
+  { id: "1", title: "Travel", imageUrl: "/api/placeholder/100/100" },
   { id: "2", title: "Food", imageUrl: "/api/placeholder/100/100", isViewed: true },
-  { id: "3", title: "Fitness", imageUrl: "/api/placeholder/100/100", isViewed: false },
+  { id: "3", title: "Fitness", imageUrl: "/api/placeholder/100/100" },
   { id: "4", title: "Work", imageUrl: "/api/placeholder/100/100", isViewed: true },
-  { id: "5", title: "Pets", imageUrl: "/api/placeholder/100/100", isViewed: false },
+  { id: "5", title: "Pets", imageUrl: "/api/placeholder/100/100" },
 ];
 
+// Mock posts
 const mockPosts: Post[] = [
-  { id: "1", imageUrl: "/api/placeholder/400/400", likes: 234, comments: 12, caption: "Beautiful sunset today! 🌅", timestamp: "2h" },
-  { id: "2", imageUrl: "/api/placeholder/400/400", likes: 567, comments: 34, caption: "New project launch! 🚀", timestamp: "5h" },
-  { id: "3", imageUrl: "/api/placeholder/400/400", likes: 890, comments: 56, caption: "Weekend vibes ✨", timestamp: "1d" },
-  { id: "4", imageUrl: "/api/placeholder/400/400", likes: 123, comments: 8, caption: "Coffee time ☕", timestamp: "2d" },
-  { id: "5", imageUrl: "/api/placeholder/400/400", likes: 456, comments: 23, caption: "Nature walk 🌿", timestamp: "3d" },
-  { id: "6", imageUrl: "/api/placeholder/400/400", likes: 789, comments: 45, caption: "Team success! 🎉", timestamp: "4d" },
+  { id: "1", imageUrl: "/api/placeholder/400/400", likes: 234, comments: 12 },
+  { id: "2", imageUrl: "/api/placeholder/400/400", likes: 567, comments: 34 },
+  { id: "3", imageUrl: "/api/placeholder/400/400", likes: 890, comments: 56 },
+  { id: "4", imageUrl: "/api/placeholder/400/400", likes: 123, comments: 8 },
+  { id: "5", imageUrl: "/api/placeholder/400/400", likes: 456, comments: 23 },
+  { id: "6", imageUrl: "/api/placeholder/400/400", likes: 789, comments: 45 },
 ];
 
 type TabType = "posts" | "reels" | "tagged";
 
 export default function ProfilePage() {
   const pathname = usePathname();
+  const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("posts");
   const [isFollowing, setIsFollowing] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactsSynced, setContactsSynced] = useState(false);
+
+  // Get user data from auth or use defaults
+  const userData = {
+    username: user?.name?.toLowerCase().replace(/\s/g, "_") || "user",
+    name: user?.name || "User",
+    phone: user?.phoneNumber || "+1 234 567 8900",
+    email: user?.email || "user@example.com",
+    avatar: user?.avatar || "/api/placeholder/150/150",
+    bio: "Welcome to my profile!",
+    followers: 1234,
+    following: 567,
+    posts: mockPosts.length,
+  };
 
   // Format numbers for display
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
+  };
+
+  // Simulate contact sync
+  const syncContacts = async () => {
+    // In production, this would request permission and import contacts
+    setContactsSynced(true);
+    
+    // Mock imported contacts
+    const mockContacts: Contact[] = [
+      { id: "1", name: "Alice Smith", phone: "+1234567890", status: "online" },
+      { id: "2", name: "Bob Johnson", phone: "+1987654321", status: "offline" },
+      { id: "3", name: "Carol White", phone: "+1555123456", status: "online" },
+      { id: "4", name: "David Brown", phone: "+1999888777" },
+    ];
+    setContacts(mockContacts);
   };
 
   return (
@@ -102,9 +110,9 @@ export default function ProfilePage() {
             <div className="flex-shrink-0">
               <div className="ig-avatar-large">
                 <Avatar className="w-full h-full">
-                  <AvatarImage src={mockUser.avatar} alt={mockUser.username} />
+                  <AvatarImage src={userData.avatar} alt={userData.username} />
                   <AvatarFallback className="text-3xl bg-secondary">
-                    {mockUser.username.charAt(0).toUpperCase()}
+                    {userData.username.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -115,12 +123,7 @@ export default function ProfilePage() {
               {/* Username & Actions */}
               <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
                 <h1 className="ig-text-title flex items-center gap-2">
-                  {mockUser.username}
-                  {mockUser.isVerified && (
-                    <svg className="w-5 h-5 ig-verified" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                    </svg>
-                  )}
+                  {userData.username}
                 </h1>
                 <div className="flex items-center gap-2">
                   <Button
@@ -136,39 +139,30 @@ export default function ProfilePage() {
                   <Button className="px-6 font-semibold rounded-md bg-secondary text-foreground border border-border">
                     Message
                   </Button>
-                  <Button variant="ghost" className="p-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </Button>
                 </div>
               </div>
 
               {/* Stats */}
               <div className="flex justify-center md:justify-start gap-8 mb-4">
                 <div className="text-center">
-                  <p className="ig-profile-stat-value">{mockUser.posts}</p>
+                  <p className="ig-profile-stat-value">{userData.posts}</p>
                   <p className="ig-profile-stat-label">posts</p>
                 </div>
                 <div className="text-center cursor-pointer">
-                  <p className="ig-profile-stat-value">{formatNumber(mockUser.followers)}</p>
+                  <p className="ig-profile-stat-value">{formatNumber(userData.followers)}</p>
                   <p className="ig-profile-stat-label">followers</p>
                 </div>
                 <div className="text-center cursor-pointer">
-                  <p className="ig-profile-stat-value">{formatNumber(mockUser.following)}</p>
+                  <p className="ig-profile-stat-value">{formatNumber(userData.following)}</p>
                   <p className="ig-profile-stat-label">following</p>
                 </div>
               </div>
 
-              {/* Bio */}
+              {/* Bio with Phone */}
               <div className="ig-profile-bio">
-                <p className="font-semibold">{mockUser.name}</p>
-                <p>{mockUser.bio}</p>
-                {mockUser.website && (
-                  <a href={`https://${mockUser.website}`} className="text-ig-link font-semibold">
-                    {mockUser.website}
-                  </a>
-                )}
+                <p className="font-semibold">{userData.name}</p>
+                <p>{userData.bio}</p>
+                <p className="text-sm text-primary mt-1">{userData.phone}</p>
               </div>
             </div>
           </div>
@@ -196,7 +190,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Action Buttons (Archived, etc.) */}
+        {/* Action Buttons */}
         <div className="px-4 md:px-0 mb-4">
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1 bg-secondary border-border rounded-md">
@@ -205,13 +199,56 @@ export default function ProfilePage() {
               </svg>
               Share Profile
             </Button>
-            <Button variant="outline" className="flex-1 bg-secondary border-border rounded-md">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <Button 
+              variant="outline" 
+              className="flex-1 bg-secondary border-border rounded-md"
+              onClick={syncContacts}
+              disabled={contactsSynced}
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
+              {contactsSynced ? `${contacts.length} Contacts` : "Sync Contacts"}
             </Button>
           </div>
         </div>
+
+        {/* Synced Contacts Preview */}
+        {contactsSynced && contacts.length > 0 && (
+          <div className="px-4 md:px-0 mb-4">
+            <div className="bg-secondary rounded-lg p-4">
+              <p className="text-sm font-semibold mb-3">Synced Contacts on Vellon X</p>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {contacts.slice(0, 5).map((contact) => (
+                  <Link 
+                    key={contact.id} 
+                    href={`/chat/${contact.id}`}
+                    className="flex flex-col items-center gap-1 flex-shrink-0"
+                  >
+                    <div className="relative">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={contact.avatar} alt={contact.name} />
+                        <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      {contact.status === "online" && (
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-primary rounded-full border-2 border-background" />
+                      )}
+                    </div>
+                    <p className="text-xs truncate w-16">{contact.name.split(" ")[0]}</p>
+                  </Link>
+                ))}
+                {contacts.length > 5 && (
+                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center border border-border">
+                      <span className="text-sm font-semibold">+{contacts.length - 5}</span>
+                    </div>
+                    <p className="text-xs">more</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="border-t border-border" />
 
@@ -258,14 +295,12 @@ export default function ProfilePage() {
             {mockPosts.map((post) => (
               <Link key={post.id} href={`/post/${post.id}`} className="relative aspect-square group">
                 <div className="absolute inset-0 bg-secondary">
-                  {/* Placeholder for post image */}
                   <div className="w-full h-full flex items-center justify-center">
                     <svg className="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
                 </div>
-                {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                   <div className="flex items-center gap-1 text-white">
                     <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -314,7 +349,7 @@ export default function ProfilePage() {
         )}
       </main>
 
-      {/* Spacer for bottom nav on mobile */}
+      {/* Spacer for bottom nav */}
       <div className="h-20 md:hidden" />
     </div>
   );
