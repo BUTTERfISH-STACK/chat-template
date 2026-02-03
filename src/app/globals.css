@@ -2,1633 +2,462 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Premium Black & Gold Theme - Enhanced CSS Variables */
-:root {
-  --radius: 0.625rem;
-  --radius-sm: 0.375rem;
-  --radius-lg: 0.875rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
-  --radius-full: 9999px;
-  
-  /* Core Colors */
-  --background: #050505;
-  --foreground: #faf9f5;
-  --card: #0f0f0f;
-  --card-foreground: #faf9f5;
-  --popover: #0f0f0f;
-  --popover-foreground: #faf9f5;
-  
-  /* Primary Gold */
-  --primary: #b8923d;
-  --primary-foreground: #050505;
-  --primary-light: #d9c085;
-  --primary-dark: #856227;
-  
-  /* Secondary */
-  --secondary: #1a1a1a;
-  --secondary-foreground: #faf9f5;
-  --secondary-light: #2a2a2a;
-  
-  /* Muted */
-  --muted: #1a1a1a;
-  --muted-foreground: #6b6b6b;
-  --muted-foreground-light: #8a8a8a;
-  
-  /* Accent */
-  --accent: #252525;
-  --accent-foreground: #faf9f5;
-  --accent-hover: #2f2f2f;
-  
-  /* Destructive */
-  --destructive: #dc2626;
-  --destructive-foreground: #faf9f5;
-  
-  /* Borders & Inputs */
-  --border: #2a2a2a;
-  --border-light: #333333;
-  --input: #2a2a2a;
-  --input-hover: #333333;
-  
-  /* Rings */
-  --ring: #b8923d;
-  --ring-light: rgba(184, 146, 61, 0.3);
-  
-  /* Charts */
-  --chart-1: #b8923d;
-  --chart-2: #d9c085;
-  --chart-3: #856227;
-  --chart-4: #e8d9b3;
-  --chart-5: #6e4f22;
-  
-  /* Sidebar */
-  --sidebar: #050505;
-  --sidebar-foreground: #faf9f5;
-  --sidebar-primary: #b8923d;
-  --sidebar-primary-foreground: #050505;
-  --sidebar-accent: #1a1a1a;
-  --sidebar-accent-foreground: #faf9f5;
-  --sidebar-border: #2a2a2a;
-  --sidebar-ring: #b8923d;
-  
-  /* Premium Gold Color Scale */
-  --color-gold-50: #faf9f5;
-  --color-gold-100: #f2ebd9;
-  --color-gold-200: #e8d9b3;
-  --color-gold-300: #d9c085;
-  --color-gold-400: #c9a65b;
-  --color-gold-500: #b8923d;
-  --color-gold-600: #a67d30;
-  --color-gold-700: #856227;
-  --color-gold-800: #6e4f22;
-  --color-gold-900: #5a421d;
-  --color-gold-950: #302208;
-  
-  /* Status Colors */
-  --status-online: #22c55e;
-  --status-away: #eab308;
-  --status-offline: #6b6b6b;
-  --status-busy: #ef4444;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-  --shadow-gold: 0 0 20px rgba(184, 146, 61, 0.15);
-  --shadow-gold-lg: 0 0 40px rgba(184, 146, 61, 0.2);
-  
-  /* Glass Effect */
-  --glass-bg: rgba(5, 5, 5, 0.8);
-  --glass-border: rgba(42, 42, 42, 0.5);
-  --glass-blur: 12px;
-}
+@layer base {
+  :root {
+    /* Instagram-inspired color palette */
+    --background: #ffffff;
+    --foreground: #262626;
+    --card: #ffffff;
+    --card-foreground: #262626;
+    --popover: #ffffff;
+    --popover-foreground: #262626;
+    --primary: #0095f6;
+    --primary-foreground: #ffffff;
+    --secondary: #fafafa;
+    --secondary-foreground: #262626;
+    --muted: #fafafa;
+    --muted-foreground: #8e8e8e;
+    --accent: #0095f6;
+    --accent-foreground: #262626;
+    --destructive: #ed4956;
+    --destructive-foreground: #ffffff;
+    --border: #dbdbdb;
+    --input: #dbdbdb;
+    --ring: #0095f6;
+    --radius: 8px;
+    
+    /* Instagram-specific colors */
+    --ig-blue: #0095f6;
+    --ig-red: #ed4956;
+    --ig-yellow: #ffcc00;
+    --ig-green: #00c853;
+    --ig-gray: #8e8e8e;
+    --ig-light-gray: #dbdbdb;
+    --ig-background: #fafafa;
+    --ig-link: #00376b;
+  }
 
-/* Light mode variables */
-[data-theme="light"] {
-  --background: #faf9f5;
-  --foreground: #0a0a0a;
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-  --secondary: #f0ede6;
-  --secondary-foreground: #0a0a0a;
-  --muted: #f0ede6;
-  --muted-foreground: #6b6b6b;
-  --accent: #e8e4dc;
-  --accent-foreground: #0a0a0a;
-  --border: #e0ddd5;
-  --input: #e0ddd5;
-  --sidebar: #faf9f5;
-  --sidebar-accent: #f0ede6;
-}
-
-/* Dark mode by default */
-html {
-  color-scheme: dark;
+  .dark {
+    --background: #000000;
+    --foreground: #fafafa;
+    --card: #000000;
+    --card-foreground: #fafafa;
+    --popover: #000000;
+    --popover-foreground: #fafafa;
+    --primary: #0095f6;
+    --primary-foreground: #000000;
+    --secondary: #1a1a1a;
+    --secondary-foreground: #fafafa;
+    --muted: #1a1a1a;
+    --muted-foreground: #8e8e8e;
+    --accent: #0095f6;
+    --accent-foreground: #fafafa;
+    --destructive: #ed4956;
+    --destructive-foreground: #fafafa;
+    --border: #262626;
+    --input: #262626;
+    --ring: #0095f6;
+  }
 }
 
 @layer base {
   * {
-    border-color: var(--border);
-    outline-color: var(--ring);
+    @apply border-border;
   }
   
   body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-sans), system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
   
-  /* Selection color */
-  ::selection {
-    background-color: var(--primary);
-    color: var(--primary-foreground);
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 }
 
-@layer components {
-  /* Premium Button Styles */
-  .btn-gold {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: var(--primary-foreground);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: var(--shadow-gold);
-  }
-  
-  .btn-gold:hover {
-    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
-    box-shadow: var(--shadow-gold-lg);
-    transform: translateY(-1px);
-  }
-  
-  .btn-gold:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-gold);
-  }
-  
-  .btn-gold-outline {
-    border: 1px solid var(--primary);
-    color: var(--primary);
-    background: transparent;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .btn-gold-outline:hover {
-    background: linear-gradient(135deg, rgba(184, 146, 61, 0.1) 0%, rgba(133, 98, 39, 0.1) 100%);
-    border-color: var(--primary-light);
-    box-shadow: var(--shadow-gold);
-  }
-  
-  .btn-ghost-gold {
-    color: var(--primary);
-    background: transparent;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .btn-ghost-gold:hover {
-    background: linear-gradient(135deg, rgba(184, 146, 61, 0.1) 0%, rgba(184, 146, 61, 0.05) 100%);
-  }
-  
-  .btn-glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
-    color: var(--foreground);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .btn-glass:hover {
-    background: rgba(42, 42, 42, 0.8);
-    border-color: var(--primary);
-  }
-  
-  /* Premium Card Styles */
-  .card-premium {
-    background-color: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-md);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .card-premium-hover {
-    background-color: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-md);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .card-premium-hover:hover {
-    border-color: var(--primary);
-    box-shadow: var(--shadow-gold);
-    transform: translateY(-2px);
-  }
-  
-  .card-glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-  }
-  
-  /* Premium Input Styles */
-  .input-premium {
-    background-color: var(--secondary);
-    border: 1px solid var(--border);
-    color: var(--foreground);
-    transition: all 0.2s ease;
-    border-radius: var(--radius);
-  }
-  
-  .input-premium::placeholder {
-    color: var(--muted-foreground);
-  }
-  
-  .input-premium:focus {
-    border-color: var(--primary);
-    outline: none;
-    box-shadow: 0 0 0 2px var(--ring-light);
-  }
-  
-  .input-premium:hover:not(:focus) {
-    border-color: var(--border-light);
-  }
-  
-  /* Premium Gradient Text */
-  .text-gradient-gold {
-    background: linear-gradient(135deg, var(--color-gold-300) 0%, var(--color-gold-500) 50%, var(--color-gold-400) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  
-  .text-gradient-premium {
-    background: linear-gradient(135deg, var(--foreground) 0%, var(--color-gold-300) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  
-  /* Premium Border Gradient */
-  .border-gradient-gold {
-    position: relative;
-  }
-  
-  .border-gradient-gold::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: var(--radius-lg);
-    padding: 1px;
-    background: linear-gradient(135deg, var(--color-gold-500), var(--color-gold-600), var(--color-gold-400));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    z-index: -1;
-  }
-  
-  /* Glass Effect */
-  .glass {
-    background-color: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
-  }
-  
-  .glass-light {
-    background-color: rgba(42, 42, 42, 0.6);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  /* Sidebar Styles */
-  .sidebar-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius);
-    color: var(--muted-foreground);
-    transition: all 0.2s ease;
-    cursor: pointer;
-  }
-  
-  .sidebar-item:hover {
-    color: var(--foreground);
-    background-color: color-mix(in srgb, var(--secondary) 60%, transparent);
-  }
-  
-  .sidebar-item-active {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius);
-    background: linear-gradient(135deg, rgba(184, 146, 61, 0.15) 0%, rgba(133, 98, 39, 0.1) 100%);
-    color: var(--primary);
-    border: 1px solid rgba(184, 146, 61, 0.2);
-    transition: all 0.2s ease;
-  }
-  
-  .sidebar-item-active:hover {
-    background: linear-gradient(135deg, rgba(184, 146, 61, 0.2) 0%, rgba(184, 146, 61, 0.15) 100%);
-  }
-  
-  /* Profile Avatar Styles */
-  .avatar-premium {
-    position: relative;
-    border: 2px solid transparent;
-    background: linear-gradient(135deg, var(--card) 0%, var(--secondary) 100%);
-    box-shadow: var(--shadow-gold);
-  }
-  
-  .avatar-premium::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: inherit;
-    padding: 2px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    z-index: -1;
-  }
-  
-  .avatar-status-indicator {
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid var(--card);
-  }
-  
-  .avatar-status-online {
-    background-color: var(--status-online);
-    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
-  }
-  
-  .avatar-status-away {
-    background-color: var(--status-away);
-    box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.3);
-  }
-  
-  .avatar-status-offline {
-    background-color: var(--status-offline);
-  }
-  
-  .avatar-status-busy {
-    background-color: var(--status-busy);
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
-  }
-  
-  /* Chat-specific styles */
-  .chat-container {
-    background-color: var(--background);
-    background-image: 
-      radial-gradient(ellipse at top, rgba(184, 146, 61, 0.03) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom, rgba(184, 146, 61, 0.02) 0%, transparent 50%);
-  }
-  
-  .chat-header {
-    background-color: var(--card);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem;
-  }
-  
-  .chat-main {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
-  }
-  
-  .chat-footer {
-    background-color: var(--card);
-    border-top: 1px solid var(--border);
-    padding: 1rem;
-  }
-  
-  /* Message Bubble Styles */
-  .message-bubble {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    border-radius: var(--radius-lg);
-    padding: 0.75rem;
-    animation: messageSlideIn 0.3s ease-out;
-  }
-  
-  .message-bubble.own {
-    justify-content: flex-end;
-    animation: messageSlideInRight 0.3s ease-out;
-  }
-  
-  .message-content {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .message-author {
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-  
-  .message-text {
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    margin-top: 0.25rem;
-  }
-  
-  .message-timestamp {
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-  }
-  
-  .message-status {
-    font-size: 0.75rem;
-  }
-  
-  .message-bubble-own {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: var(--primary-foreground);
-    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl);
-  }
-  
-  .message-bubble-other {
-    background: var(--secondary);
-    color: var(--foreground);
-    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm);
-  }
-  
-  .message-bubble-group {
-    background: var(--secondary);
-    color: var(--foreground);
-    border-radius: var(--radius-xl);
-  }
-  
-  /* Chat Input Container */
-  .chat-input-container {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background-color: var(--card);
-    border-radius: var(--radius-xl);
-    margin: 0.5rem;
-    border: 1px solid var(--border);
-  }
-  
-  .chat-input-field {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--foreground);
-    font-size: 0.9375rem;
-    outline: none;
-  }
-  
-  .chat-input-field::placeholder {
-    color: var(--muted-foreground);
-  }
-  
-  /* Chat List Item */
-  .chat-list-item {
-    display: flex;
-    align-items: center;
-    padding: 0.875rem 1rem;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .chat-list-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 3px;
-    background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-  
-  .chat-list-item:hover {
-    background-color: color-mix(in srgb, var(--secondary) 50%, transparent);
-  }
-  
-  .chat-list-item:hover::before {
-    opacity: 1;
-  }
-  
-  .chat-list-item.active {
-    background: linear-gradient(135deg, rgba(184, 146, 61, 0.1) 0%, rgba(184, 146, 61, 0.05) 100%);
-    border-left: 3px solid var(--primary);
-  }
-  
-  .chat-list-item.active::before {
-    opacity: 1;
-  }
-  
-  .chat-list-avatar {
-    width: 3rem;
-    height: 3rem;
-    flex-shrink: 0;
-    border-radius: 50%;
-    overflow: hidden;
-  }
-  
-  .chat-list-info {
-    flex: 1;
-    min-width: 0;
-    margin-left: 0.875rem;
-  }
-  
-  .chat-list-name {
-    font-weight: 600;
-    font-size: 0.9375rem;
-    color: var(--foreground);
-  }
-  
-  .chat-list-timestamp {
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-  }
-  
-  .chat-list-message {
-    font-size: 0.875rem;
-    color: var(--muted-foreground);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  
-  .chat-list-badge {
-    font-size: 0.75rem;
-    min-width: 1.25rem;
-    height: 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--primary);
-    color: var(--primary-foreground);
-    border-radius: var(--radius-full);
-    font-weight: 600;
-  }
-  
-  /* Status Story Styles */
-  .status-circle {
-    position: relative;
-    border-radius: 50%;
-    padding: 2px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  }
-  
-  .status-circle-viewed {
-    background: var(--border);
-  }
-  
-  .status-circle-inner {
-    border-radius: 50%;
-    padding: 2px;
-    background: var(--card);
-  }
-  
-  .status-circle-image {
-    border-radius: 50%;
-    object-fit: cover;
-  }
-  
-  .status-ring-seen {
-    position: relative;
-  }
-  
-  .status-ring-seen::after {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: 50%;
-    border: 2px solid var(--muted-foreground);
-  }
-  
-  /* Media Gallery Styles */
-  .media-gallery {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.25rem;
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  
-  .media-item {
-    aspect-ratio: 1;
-    object-fit: cover;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .media-item:hover {
-    transform: scale(1.05);
-    z-index: 10;
-  }
-  
-  .media-item-more {
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--secondary);
-    color: var(--foreground);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .media-item-more:hover {
-    background: var(--accent);
-  }
-  
-  /* Typing Indicator */
-  .typing-indicator {
-    display: flex;
-    gap: 4px;
-    padding: 0.75rem 1rem;
-  }
-  
-  .typing-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--muted-foreground);
-    animation: typingBounce 1.4s ease-in-out infinite;
-  }
-  
-  .typing-dot:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-  
-  .typing-dot:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-  
-  /* Read Receipts */
-  .read-receipt {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  
-  .read-receipt-double {
-    display: flex;
-    align-items: flex-end;
-  }
-  
-  .read-check {
-    width: 16px;
-    height: 16px;
-    color: var(--primary);
-  }
-  
-  .read-check-read {
-    color: var(--primary-light);
-  }
-  
-  /* Online Presence Ring */
-  .online-presence-ring {
-    position: relative;
-  }
-  
-  .online-presence-ring::after {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    border: 2px solid var(--status-online);
-    animation: pulseRing 2s ease-in-out infinite;
-  }
-  
-  /* Section Headers */
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  
-  .section-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  
-  /* Profile Header */
-  .profile-header {
-    position: relative;
-    padding: 2rem 1rem;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-  }
-  
-  .profile-avatar-large {
-    width: 6rem;
-    height: 6rem;
-    border-radius: 50%;
-    margin: 0 auto 1rem;
-    overflow: hidden;
-    border: 3px solid var(--primary);
-    box-shadow: var(--shadow-gold-lg);
-  }
-  
-  .profile-name {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--foreground);
-  }
-  
-  .profile-status {
-    font-size: 0.875rem;
-    color: var(--muted-foreground);
-    margin-top: 0.25rem;
-  }
-  
-  .profile-bio {
-    font-size: 0.875rem;
-    color: var(--muted-foreground);
-    margin-top: 0.5rem;
-    max-width: 280px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  
-  /* Tab Navigation */
-  .tab-nav {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    background: var(--card);
-  }
-  
-  .tab-item {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    color: var(--muted-foreground);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 2px solid transparent;
-    position: relative;
-  }
-  
-  .tab-item:hover {
-    color: var(--foreground);
-    background: color-mix(in srgb, var(--secondary) 30%, transparent);
-  }
-  
-  .tab-item.active {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-  }
-  
-  .tab-item.active::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
-  }
-  
-  .tab-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-  
-  /* Settings Item */
-  .settings-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .settings-item:hover {
-    background: color-mix(in srgb, var(--secondary) 40%, transparent);
-  }
-  
-  .settings-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--secondary);
-    border-radius: var(--radius);
-    color: var(--primary);
-  }
-  
-  .settings-content {
-    flex: 1;
-  }
-  
-  .settings-label {
-    font-weight: 500;
-    color: var(--foreground);
-  }
-  
-  .settings-description {
-    font-size: 0.8125rem;
-    color: var(--muted-foreground);
-    margin-top: 0.125rem;
-  }
-  
-  .settings-arrow {
-    color: var(--muted-foreground);
-  }
-  
-  /* Toggle Switch */
-  .toggle-switch {
-    position: relative;
-    width: 3rem;
-    height: 1.5rem;
-    background: var(--secondary);
-    border-radius: var(--radius-full);
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .toggle-switch.active {
-    background: var(--primary);
-  }
-  
-  .toggle-switch::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 1.25rem;
-    height: 1.25rem;
-    background: white;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .toggle-switch.active::after {
-    transform: translateX(1.5rem);
-  }
-  
-  /* Divider */
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 0.5rem 0;
-  }
-  
-  /* Empty State */
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1rem;
-    text-align: center;
-  }
-  
-  .empty-state-icon {
-    width: 4rem;
-    height: 4rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--secondary);
-    border-radius: 50%;
-    margin-bottom: 1rem;
-    color: var(--muted-foreground);
-  }
-  
-  .empty-state-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--foreground);
-    margin-bottom: 0.5rem;
-  }
-  
-  .empty-state-description {
-    font-size: 0.875rem;
-    color: var(--muted-foreground);
-    max-width: 300px;
-  }
-  
-  /* Search Bar */
-  .search-bar {
-    position: relative;
-  }
-  
-  .search-bar-input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.75rem;
-    background: var(--secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-full);
-    color: var(--foreground);
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-  }
-  
-  .search-bar-input::placeholder {
-    color: var(--muted-foreground);
-  }
-  
-  .search-bar-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--ring-light);
-  }
-  
-  .search-bar-icon {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted-foreground);
-    pointer-events: none;
-  }
-  
-  /* Back Button */
-  .back-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--foreground);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .back-button:hover {
-    background: var(--secondary);
-  }
-  
-  /* Action Button */
-  .action-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--muted-foreground);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .action-button:hover {
-    background: var(--secondary);
-    color: var(--foreground);
-  }
-  
-  .action-button-primary {
-    background: var(--primary);
-    color: var(--primary-foreground);
-  }
-  
-  .action-button-primary:hover {
-    background: var(--primary-light);
-  }
-  
-  /* Contact Info Section */
-  .contact-info-section {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  
-  .contact-info-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 0.75rem 0;
-  }
-  
-  .contact-info-icon {
-    width: 2rem;
-    height: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--primary);
-    flex-shrink: 0;
-  }
-  
-  .contact-info-content {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .contact-info-label {
-    font-size: 0.75rem;
-    color: var(--muted-foreground);
-    margin-bottom: 0.125rem;
-  }
-  
-  .contact-info-value {
-    font-size: 0.9375rem;
-    color: var(--foreground);
-    word-break: break-word;
-  }
-  
-  /* Floating Action Button */
-  .fab {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 3.5rem;
-    height: 3.5rem;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: var(--primary-foreground);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: var(--shadow-gold-lg);
-    transition: all 0.3s ease;
-    z-index: 100;
-  }
-  
-  .fab:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 30px rgba(184, 146, 61, 0.4);
-  }
-  
-  .fab:active {
-    transform: scale(0.95);
-  }
-}
-
-/* Premium Scrollbar */
+/* Instagram-style scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
+  width: 0px;
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
-}
-
-/* Firefox scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-
-/* Animation Classes */
-@layer utilities {
-  .animate-glow {
-    animation: glow 2s ease-in-out infinite alternate;
-  }
-  
-  .animate-pulse-gold {
-    animation: pulse-gold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-in-out;
-  }
-  
-  .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
-  
-  .animate-slide-in-right {
-    animation: slideInRight 0.3s ease-out;
-  }
-  
-  .animate-slide-in-left {
-    animation: slideInLeft 0.3s ease-out;
-  }
-  
-  .animate-float {
-    animation: float 4s ease-in-out infinite;
-  }
-  
-  .animate-scale-in {
-    animation: scaleIn 0.3s ease-out;
-  }
-  
-  .animate-scale-out {
-    animation: scaleOut 0.3s ease-out;
-  }
-  
-  .animate-shake {
-    animation: shake 0.5s ease-in-out;
-  }
-  
-  .animate-spin-slow {
-    animation: spinSlow 3s linear infinite;
-  }
-  
-  .animate-pulse-ring {
-    animation: pulseRing 2s ease-in-out infinite;
-  }
-  
-  .animate-typing {
-    animation: typing 1.4s ease-in-out infinite;
-  }
-  
-  .animate-bounce-gentle {
-    animation: bounceGentle 2s ease-in-out infinite;
-  }
-  
-  .animate-spinner {
-    animation: spinner 0.8s linear infinite;
-  }
-  
-  .animate-message-send {
-    animation: messageSend 0.3s ease-out;
-  }
-  
-  .animate-message-receive {
-    animation: messageReceive 0.3s ease-out;
-  }
-  
-  .animate-status-view {
-    animation: statusView 0.5s ease-out;
-  }
-  
-  /* Hover Effects */
-  .hover-lift {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .hover-scale {
-    transition: transform 0.2s ease;
-  }
-  
-  .hover-scale:hover {
-    transform: scale(1.02);
-  }
-  
-  .hover-glow:hover {
-    box-shadow: var(--shadow-gold);
-  }
-  
-  /* Focus States */
-  .focus-ring:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--ring-light), 0 0 0 4px rgba(184, 146, 61, 0.1);
-  }
-  
-  /* Transition utilities */
-  .transition-smooth {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  /* Text utilities */
-  .text-balance {
-    text-wrap: balance;
-  }
-  
-  /* Hide scrollbar */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Line clamp */
-  .line-clamp-1 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-  }
-  
-  .line-clamp-2 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-  
-  .line-clamp-3 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-  }
-}
-
-/* Keyframe Animations */
-@keyframes glow {
-  from {
-    box-shadow: 0 0 5px rgba(184, 146, 61, 0.3), 0 0 10px rgba(184, 146, 61, 0.2);
-  }
-  to {
-    box-shadow: 0 0 10px rgba(184, 146, 61, 0.5), 0 0 20px rgba(184, 146, 61, 0.3), 0 0 30px rgba(184, 146, 61, 0.2);
-  }
-}
-
-@keyframes pulse-gold {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
+/* Instagram-style animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
+  from { 
     opacity: 0;
     transform: translateY(10px);
   }
-  to {
+  to { 
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0) translateX(0);
-    opacity: 0.2;
-  }
-  50% {
-    transform: translateY(-10px) translateX(5px);
-    opacity: 0.5;
   }
 }
 
 @keyframes scaleIn {
-  from {
+  from { 
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.95);
   }
-  to {
+  to { 
     opacity: 1;
     transform: scale(1);
   }
 }
 
-@keyframes scaleOut {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.9);
-  }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-4px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(4px);
-  }
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
-@keyframes spinSlow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
 }
 
-@keyframes pulseRing {
-  0% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.3;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
 }
 
-@keyframes typing {
-  0%, 100% {
-    opacity: 0.2;
-    transform: translateY(0);
-  }
-  50% {
-    opacity: 1;
-    transform: translateY(-3px);
-  }
+.animate-pulse-slow {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@keyframes typingBounce {
-  0%, 60%, 100% {
-    transform: translateY(0);
-  }
-  30% {
-    transform: translateY(-4px);
-  }
+/* Instagram-style components */
+.ig-card {
+  @apply bg-card rounded-lg border border-border;
 }
 
-@keyframes bounceGentle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
+.ig-button-primary {
+  @apply bg-primary text-primary-foreground font-semibold rounded-md 
+         hover:bg-blue-600 transition-colors duration-200
+         disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-@keyframes spinner {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.ig-button-secondary {
+  @apply bg-transparent text-primary font-semibold p-0 
+         hover:bg-secondary rounded transition-colors duration-200;
 }
 
-@keyframes messageSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.ig-button-ghost {
+  @apply bg-transparent hover:bg-secondary rounded transition-colors duration-200;
 }
 
-@keyframes messageSlideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+.ig-input {
+  @apply w-full px-4 py-3 bg-secondary rounded border border-border 
+         focus:outline-none focus:border-primary transition-colors duration-200
+         placeholder:text-muted-foreground;
 }
 
-@keyframes messageSend {
-  0% {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+.ig-avatar {
+  @apply rounded-full border-2 border-white shadow-sm;
 }
 
-@keyframes messageReceive {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.ig-avatar-large {
+  @apply w-24 h-24 md:w-32 md:h-32;
 }
 
-@keyframes statusView {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.ig-avatar-medium {
+  @apply w-12 h-12 md:w-16 md:h-16;
 }
 
-@keyframes ripple {
-  0% {
-    transform: scale(1);
-    opacity: 0.3;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
+.ig-avatar-small {
+  @apply w-8 h-8 md:w-10 md:h-10;
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+.ig-divider {
+  @apply border-t border-border my-4;
 }
 
-/* Loading skeleton */
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--secondary) 25%,
-    var(--accent) 50%,
-    var(--secondary) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+.ig-text-caption {
+  @apply text-xs text-muted-foreground;
 }
 
-/* Premium shine effect */
-.shine-effect {
-  position: relative;
-  overflow: hidden;
+.ig-text-caption-bold {
+  @apply text-xs font-semibold text-foreground;
 }
 
-.shine-effect::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
-  animation: shine 2s infinite;
+.ig-text-body {
+  @apply text-sm text-foreground;
 }
 
-@keyframes shine {
-  0% {
-    left: -100%;
-  }
-  50%, 100% {
-    left: 100%;
-  }
+.ig-text-subtitle {
+  @apply text-base font-semibold text-foreground;
 }
 
-/* Premium border glow */
-.border-glow {
-  position: relative;
+.ig-text-title {
+  @apply text-lg font-bold text-foreground;
 }
 
-.border-glow::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: calc(var(--radius-lg) + 2px);
-  background: linear-gradient(
-    45deg,
-    var(--color-gold-500),
-    var(--color-gold-600),
-    var(--color-gold-400),
-    var(--color-gold-500)
-  );
-  z-index: -1;
-  animation: borderGlow 3s linear infinite;
-  background-size: 300% 300%;
+.ig-badge {
+  @apply inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full;
 }
 
-@keyframes borderGlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.ig-badge-blue {
+  @apply bg-primary text-primary-foreground;
 }
 
-/* Ripple effect on click */
-.ripple {
-  position: relative;
-  overflow: hidden;
+.ig-badge-red {
+  @apply bg-destructive text-destructive-foreground;
 }
 
-.ripple::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  width: 100px;
-  height: 100px;
-  margin-top: -50px;
-  margin-left: -50px;
-  animation: ripple 0.6s ease-out;
-  opacity: 0;
+/* Instagram-style navigation */
+.ig-navbar {
+  @apply fixed top-0 left-0 right-0 h-16 bg-background border-b border-border 
+         z-50 flex items-center justify-between px-4;
 }
 
-/* Notification badge pulse */
-.notification-pulse {
-  position: relative;
+.ig-bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border 
+         z-50 flex items-center justify-around px-4;
 }
 
-.notification-pulse::before {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid var(--primary);
-  animation: pulseRing 2s ease-in-out infinite;
+.ig-nav-item {
+  @apply flex flex-col items-center justify-center p-2 rounded-lg 
+         transition-colors duration-200;
 }
 
-/* Status indicator animation */
-@keyframes statusPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-  }
+.ig-nav-item-active {
+  @apply text-primary;
 }
 
-.status-pulse {
-  animation: statusPulse 2s ease-in-out infinite;
+.ig-nav-item-inactive {
+  @apply text-foreground;
+}
+
+/* Instagram-style cards */
+.ig-story-ring {
+  @apply rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500;
+}
+
+.ig-story-viewed {
+  @apply bg-gray-300;
+}
+
+.ig-post-card {
+  @apply bg-card rounded-lg border border-border mb-4 overflow-hidden;
+}
+
+.ig-post-header {
+  @apply flex items-center justify-between p-3;
+}
+
+.ig-post-actions {
+  @apply flex items-center gap-4 p-3;
+}
+
+.ig-post-content {
+  @apply w-full aspect-square object-cover;
+}
+
+.ig-post-footer {
+  @apply p-3;
+}
+
+/* Instagram-style profile */
+.ig-profile-header {
+  @apply p-4;
+}
+
+.ig-profile-stats {
+  @apply flex items-center justify-around py-4;
+}
+
+.ig-profile-stat {
+  @apply flex flex-col items-center;
+}
+
+.ig-profile-stat-value {
+  @apply font-bold text-lg text-foreground;
+}
+
+.ig-profile-stat-label {
+  @apply text-xs text-muted-foreground;
+}
+
+.ig-profile-bio {
+  @apply mt-2 text-sm;
+}
+
+.ig-profile-tabs {
+  @apply flex border-t border-border;
+}
+
+.ig-profile-tab {
+  @apply flex-1 flex items-center justify-center py-3 border-b-2 border-transparent
+         transition-colors duration-200;
+}
+
+.ig-profile-tab-active {
+  @apply border-primary text-primary;
+}
+
+.ig-profile-tab-inactive {
+  @apply border-transparent text-muted-foreground;
+}
+
+/* Instagram-style highlight */
+.ig-highlight {
+  @apply flex flex-col items-center gap-1 min-w-[70px];
+}
+
+.ig-highlight-circle {
+  @apply w-[70px] h-[70px] rounded-full p-[2px] bg-transparent;
+}
+
+.ig-highlight-circle-viewed {
+  @apply bg-gray-200;
+}
+
+.ig-highlight-circle-active {
+  @apply bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500;
+}
+
+.ig-highlight-label {
+  @apply text-xs text-center line-clamp-1 w-[70px];
+}
+
+/* Instagram-style input */
+.ig-textarea {
+  @apply w-full px-4 py-3 bg-secondary rounded border border-border 
+         focus:outline-none focus:border-primary transition-colors duration-200
+         resize-none placeholder:text-muted-foreground;
+}
+
+/* Instagram-style dialog */
+.ig-dialog-overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center;
+}
+
+.ig-dialog-content {
+  @apply bg-card rounded-lg max-w-md w-full mx-4 animate-scale-in;
+}
+
+/* Instagram-style toggle */
+.ig-toggle {
+  @apply w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer;
+}
+
+.ig-toggle-active {
+  @apply bg-primary;
+}
+
+.ig-toggle-inactive {
+  @apply bg-gray-300;
+}
+
+.ig-toggle-thumb {
+  @apply w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200;
+}
+
+.ig-toggle-active .ig-toggle-thumb {
+  @apply translate-x-5;
+}
+
+.ig-toggle-inactive .ig-toggle-thumb {
+  @apply translate-x-1;
+}
+
+/* Instagram-style verified badge */
+.ig-verified {
+  @apply text-blue-500;
+}
+
+/* Instagram-style create button */
+.ig-create-button {
+  @apply w-8 h-8 rounded-full bg-primary flex items-center justify-center
+         text-white transition-transform duration-200 hover:scale-105;
+}
+
+/* Instagram-style icon buttons */
+.ig-icon-button {
+  @apply p-2 rounded-full hover:bg-secondary transition-colors duration-200;
+}
+
+/* Instagram-style message bubbles */
+.ig-message-sent {
+  @apply bg-primary text-primary-foreground rounded-2xl rounded-tr-sm;
+}
+
+.ig-message-received {
+  @apply bg-secondary text-foreground rounded-2xl rounded-tl-sm;
+}
+
+/* Instagram-style empty state */
+.ig-empty-state {
+  @apply flex flex-col items-center justify-center py-12 px-4 text-center;
+}
+
+.ig-empty-state-icon {
+  @apply w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4;
+}
+
+.ig-empty-state-title {
+  @apply font-semibold text-lg mb-2;
+}
+
+.ig-empty-state-description {
+  @apply text-sm text-muted-foreground max-w-xs;
+}
+
+/* Instagram-style loader */
+.ig-loader {
+  @apply w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin;
+}
+
+/* Instagram-style search bar */
+.ig-search-bar {
+  @apply relative;
+}
+
+.ig-search-bar-input {
+  @apply w-full px-4 py-2 pl-10 bg-secondary rounded-lg border border-border 
+         focus:outline-none focus:border-primary transition-colors duration-200
+         placeholder:text-muted-foreground;
+}
+
+.ig-search-bar-icon {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground;
+}
+
+/* Instagram-style grid */
+.ig-grid {
+  @apply grid grid-cols-3 gap-1;
+}
+
+/* Instagram-style reel indicator */
+.ig-reel-indicator {
+  @apply absolute top-2 right-2 flex items-center gap-1 px-2 py-1 
+         bg-black/50 rounded-full text-white text-xs;
+}
+
+/* Instagram-style like heart animation */
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.ig-heart-animated {
+  animation: heartPop 0.3s ease-out;
+}
+
+/* Instagram-style save */
+.ig-save-icon {
+  @apply transition-colors duration-200;
+}
+
+.ig-save-icon-filled {
+  @apply text-black;
+}
+
+.ig-save-icon-outline {
+  @apply text-foreground hover:text-muted-foreground;
 }

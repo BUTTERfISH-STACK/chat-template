@@ -10,6 +10,7 @@ export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, Dialo
 
 // Navigation Components
 export { Sidebar, BottomNavBar } from "./Sidebar"
+export { InstagramNav, InstagramNavBar } from "./InstagramNav"
 
 // Premium Chat Components
 export { ChatList, ChatListHeader, SearchBar } from "./ChatList"
