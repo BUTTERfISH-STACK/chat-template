@@ -8,6 +8,9 @@ export { Label } from "./label"
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card"
 export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "./dialog"
 
+// Navigation Components
+export { Sidebar, BottomNavBar } from "./Sidebar"
+
 // Premium Chat Components
 export { ChatList, ChatListHeader, SearchBar } from "./ChatList"
 export { Message, DateSeparator, MessageSkeleton } from "./Message"

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Sidebar, BottomNavBar } from "@/components/ui/Sidebar"
 import { ChatList, ChatListHeader, SearchBar } from "@/components/ui/ChatList"
 import { Message, DateSeparator, MessageSkeleton } from "@/components/ui/Message"
 import { ChatInput, TypingIndicator } from "@/components/ui/ChatInput"
@@ -265,60 +266,42 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--background)]">
-      {/* Header */}
-      <ChatListHeader
-        title="Chats"
-        onSearchClick={() => setIsSearchActive(true)}
-      />
-
-      {/* Search Bar */}
-      {isSearchActive && (
-        <SearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onClose={() => {
-            setIsSearchActive(false)
-            setSearchQuery("")
-          }}
+    <div className="flex h-screen bg-[var(--background)]">
+      {/* Sidebar Navigation */}
+      <Sidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <ChatListHeader
+          title="Chats"
+          onSearchClick={() => setIsSearchActive(true)}
         />
-      )}
 
-      {/* Chat List */}
-      <main className="flex-1 overflow-y-auto">
-        <ChatList
-          chats={mockChats}
-          onChatSelect={handleSelectChat}
-          searchQuery={searchQuery}
-        />
-      </main>
+        {/* Search Bar */}
+        {isSearchActive && (
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onClose={() => {
+              setIsSearchActive(false)
+              setSearchQuery("")
+            }}
+          />
+        )}
 
-      {/* Footer Navigation */}
-      <footer className="chat-footer flex-shrink-0">
-        <div className="flex items-center justify-around">
-          <a href="/chat" className="sidebar-item-active">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </a>
-          <a href="/marketplace" className="sidebar-item">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-          </a>
-          <a href="/profile" className="sidebar-item">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </a>
-          <a href="/settings" className="sidebar-item">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </a>
-        </div>
-      </footer>
+        {/* Chat List */}
+        <main className="flex-1 overflow-y-auto">
+          <ChatList
+            chats={mockChats}
+            onChatSelect={handleSelectChat}
+            searchQuery={searchQuery}
+          />
+        </main>
+
+        {/* Bottom Navigation Bar */}
+        <BottomNavBar />
+      </div>
 
       {/* Floating Action Button */}
       <button

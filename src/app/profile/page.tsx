@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { StatusList } from "@/components/ui/StatusList"
 import { ContactList, ContactStatus } from "@/components/ui/ContactList"
 import { MediaGallery, DocumentList } from "@/components/ui/MediaGallery"
+import { Sidebar, BottomNavBar } from "@/components/ui/Sidebar"
 
 // Types
 interface Tab {
@@ -48,46 +49,6 @@ interface MediaItem {
   duration?: string
   timestamp: string
 }
-
-const tabs: Tab[] = [
-  {
-    id: "chats",
-    label: "Chats",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      </svg>
-    )
-  },
-  {
-    id: "status",
-    label: "Status",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-      </svg>
-    )
-  },
-  {
-    id: "calls",
-    label: "Calls",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-      </svg>
-    )
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    )
-  }
-]
 
 // Mock data
 const mockUser: User = {
@@ -426,63 +387,45 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col h-screen bg-[var(--background)]">
-      {/* Header */}
-      <header className="chat-header flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-[var(--foreground)]">
-            {activeTab === "chats" && "Chats"}
-            {activeTab === "status" && "Status"}
-            {activeTab === "calls" && "Calls"}
-            {activeTab === "settings" && "Settings"}
-          </h1>
-          <div className="flex-1" />
-          <button className="action-button p-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
-          <button className="action-button p-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
-        </div>
-      </header>
+      {/* Sidebar - Desktop */}
+      <Sidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="chat-header flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">
+              {activeTab === "chats" && "Chats"}
+              {activeTab === "status" && "Status"}
+              {activeTab === "calls" && "Calls"}
+              {activeTab === "settings" && "Settings"}
+            </h1>
+            <div className="flex-1" />
+            <button className="action-button p-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+            <button className="action-button p-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
+          </div>
+        </header>
 
-      {/* Content */}
-      <main className="flex-1 overflow-hidden">
-        {activeTab === "chats" && renderChatsTab()}
-        {activeTab === "status" && renderStatusTab()}
-        {activeTab === "calls" && renderCallsTab()}
-        {activeTab === "settings" && renderSettingsTab()}
-      </main>
+        {/* Content */}
+        <main className="flex-1 overflow-hidden">
+          {activeTab === "chats" && renderChatsTab()}
+          {activeTab === "status" && renderStatusTab()}
+          {activeTab === "calls" && renderCallsTab()}
+          {activeTab === "settings" && renderSettingsTab()}
+        </main>
+      </div>
 
-      {/* Footer Navigation */}
-      <footer className="chat-footer flex-shrink-0">
-        <div className="flex items-center justify-around">
-          <a href="/chat" className="sidebar-item">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </a>
-          <a href="/marketplace" className="sidebar-item">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-          </a>
-          <a href="/profile" className="sidebar-item-active">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </a>
-          <a href="/settings" className="sidebar-item">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </a>
-        </div>
-      </footer>
+      {/* Bottom Navigation - Mobile */}
+      <BottomNavBar />
 
       {/* Floating Action Button */}
       <button className="fab">
