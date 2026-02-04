@@ -164,10 +164,12 @@ export default function MarketplacePage() {
       <SideNav />
 
       {/* Mobile Top Navigation */}
-      <TopNavBar />
+      <div className="md:hidden">
+        <TopNavBar />
+      </div>
 
       {/* Main Content */}
-      <main className="ml-0 md:ml-64 pt-16 md:pt-0 min-h-screen">
+      <main className="md:ml-64 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <header className="sticky top-0 z-10 bg-[var(--background)]/95 backdrop-blur-sm border-b border-[var(--border)] px-4 md:px-6 py-4">

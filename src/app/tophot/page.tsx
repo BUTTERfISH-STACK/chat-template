@@ -156,7 +156,9 @@ export default function TopHotPage() {
       <SideNav />
 
       {/* Mobile Top Navigation */}
-      <TopNavBar />
+      <div className="md:hidden">
+        <TopNavBar />
+      </div>
 
       {/* Main Content */}
       <main className="md:ml-64 min-h-screen">

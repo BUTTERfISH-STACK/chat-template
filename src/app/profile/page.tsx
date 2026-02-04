@@ -58,10 +58,12 @@ export default function ProfilePage() {
       <SideNav />
 
       {/* Mobile Top Navigation */}
-      <TopNavBar />
+      <div className="md:hidden">
+        <TopNavBar />
+      </div>
 
       {/* Main Content */}
-      <main className="ml-0 md:ml-64 pt-16 md:pt-0 min-h-screen">
+      <main className="md:ml-64 min-h-screen">
         <div className="max-w-3xl mx-auto">
           {/* Profile Header */}
           <header className="vellon-card-section">

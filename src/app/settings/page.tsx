@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { InstagramNavBar } from "@/components/ui/InstagramNav";
+import { SideNav, TopNavBar } from "@/components/ui/SideNav";
 
 // Mock user data
 const mockUser = {
@@ -143,167 +143,174 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0 md:pt-16">
-      {/* Navigation */}
-      <InstagramNavBar />
+    <div className="min-h-screen bg-[var(--background)]">
+      {/* Desktop Side Navigation */}
+      <SideNav />
+
+      {/* Mobile Top Navigation */}
+      <div className="md:hidden">
+        <TopNavBar />
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-lg mx-auto">
-        {/* Header */}
-        <header className="sticky top-16 z-10 bg-background border-b border-border px-4 py-3">
-          <h1 className="text-lg font-bold text-center">Settings</h1>
-        </header>
+      <main className="md:ml-64 min-h-screen">
+        <div className="max-w-lg mx-auto">
+          {/* Header */}
+          <header className="sticky top-0 z-10 bg-[var(--background)]/95 backdrop-blur-sm border-b border-[var(--border)] px-4 py-3">
+            <h1 className="text-lg font-bold text-center">Settings</h1>
+          </header>
 
-        {/* Profile Section */}
-        <div className="border-b border-border">
-          <Link 
-            href="/profile"
-            className="flex items-center gap-4 px-4 py-3 hover:bg-secondary transition-colors cursor-pointer"
-          >
-            <Avatar className="w-14 h-14">
-              <AvatarImage src={mockUser.avatar} alt={mockUser.username} />
-              <AvatarFallback>{mockUser.username.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="font-semibold text-sm">{mockUser.username}</p>
-              <p className="text-sm text-muted-foreground">{mockUser.name}</p>
-            </div>
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-
-        {/* Account Settings */}
-        <div className="border-b border-border">
-          <div className="px-4 py-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Account</p>
-          </div>
-          {accountSettings.map((setting) => (
-            <button
-              key={setting.id}
-              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-secondary transition-colors cursor-pointer text-left"
-              onClick={setting.onClick}
+          {/* Profile Section */}
+          <div className="border-b border-[var(--border)]">
+            <Link 
+              href="/profile"
+              className="flex items-center gap-4 px-4 py-3 hover:bg-[var(--secondary)] transition-colors cursor-pointer"
             >
-              <div className="text-muted-foreground">{setting.icon}</div>
-              <p className="flex-1 text-sm">{setting.label}</p>
-              {setting.action && (
-                <p className="text-sm text-muted-foreground">{setting.action}</p>
-              )}
-              <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          ))}
-        </div>
-
-        {/* Privacy Settings */}
-        <div className="border-b border-border">
-          <div className="px-4 py-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Privacy</p>
-          </div>
-          {privacySettings.map((setting) => (
-            <button
-              key={setting.id}
-              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-secondary transition-colors cursor-pointer text-left"
-              onClick={setting.onClick}
-            >
-              <div className="text-muted-foreground">{setting.icon}</div>
-              <p className="flex-1 text-sm">{setting.label}</p>
-              {setting.action && (
-                <p className="text-sm text-muted-foreground">{setting.action}</p>
-              )}
-              <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          ))}
-        </div>
-
-        {/* Preferences Settings */}
-        <div className="border-b border-border">
-          <div className="px-4 py-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Preferences</p>
-          </div>
-          {preferencesSettings.map((setting) => (
-            <button
-              key={setting.id}
-              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-secondary transition-colors cursor-pointer text-left"
-              onClick={setting.onClick}
-            >
-              <div className="text-muted-foreground">{setting.icon}</div>
+              <Avatar className="w-14 h-14">
+                <AvatarImage src={mockUser.avatar} alt={mockUser.username} />
+                <AvatarFallback>{mockUser.username.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
               <div className="flex-1">
-                <p className="text-sm">{setting.label}</p>
-                {setting.description && (
-                  <p className="text-xs text-muted-foreground">{setting.description}</p>
-                )}
+                <p className="font-semibold text-sm">{mockUser.username}</p>
+                <p className="text-sm text-[var(--muted-foreground)]">{mockUser.name}</p>
               </div>
-              {setting.action && !setting.onClick && (
-                <p className="text-sm text-muted-foreground">{setting.action}</p>
-              )}
-              {setting.onClick && (
-                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+
+          {/* Account Settings */}
+          <div className="border-b border-[var(--border)]">
+            <div className="px-4 py-2">
+              <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Account</p>
+            </div>
+            {accountSettings.map((setting) => (
+              <button
+                key={setting.id}
+                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-[var(--secondary)] transition-colors cursor-pointer text-left"
+                onClick={setting.onClick}
+              >
+                <div className="text-[var(--muted-foreground)]">{setting.icon}</div>
+                <p className="flex-1 text-sm">{setting.label}</p>
+                {setting.action && (
+                  <p className="text-sm text-[var(--muted-foreground)]">{setting.action}</p>
+                )}
+                <svg className="w-4 h-4 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-              )}
-              {setting.id === "dark-mode" && (
-                <div 
-                  className={cn("ig-toggle", darkMode ? "ig-toggle-active" : "ig-toggle-inactive")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDarkMode(!darkMode);
-                  }}
-                >
-                  <div className="ig-toggle-thumb" />
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* More Settings */}
-        <div className="border-b border-border">
-          <div className="px-4 py-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">More</p>
+              </button>
+            ))}
           </div>
-          {moreSettings.map((setting) => (
-            <button
-              key={setting.id}
-              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-secondary transition-colors cursor-pointer text-left"
-              onClick={setting.onClick}
-            >
-              <div className="text-muted-foreground">{setting.icon}</div>
-              <div className="flex-1">
-                <p className="text-sm">{setting.label}</p>
-                {setting.description && (
-                  <p className="text-xs text-muted-foreground">{setting.description}</p>
+
+          {/* Privacy Settings */}
+          <div className="border-b border-[var(--border)]">
+            <div className="px-4 py-2">
+              <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Privacy</p>
+            </div>
+            {privacySettings.map((setting) => (
+              <button
+                key={setting.id}
+                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-[var(--secondary)] transition-colors cursor-pointer text-left"
+                onClick={setting.onClick}
+              >
+                <div className="text-[var(--muted-foreground)]">{setting.icon}</div>
+                <p className="flex-1 text-sm">{setting.label}</p>
+                {setting.action && (
+                  <p className="text-sm text-[var(--muted-foreground)]">{setting.action}</p>
                 )}
-              </div>
-              <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          ))}
-        </div>
+                <svg className="w-4 h-4 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
 
-        {/* Logout */}
-        <div className="p-4">
-          <Button
-            variant="ghost"
-            className="w-full text-primary hover:bg-secondary"
-            onClick={() => router.push("/login")}
-          >
-            Log Out
-          </Button>
-        </div>
+          {/* Preferences Settings */}
+          <div className="border-b border-[var(--border)]">
+            <div className="px-4 py-2">
+              <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Preferences</p>
+            </div>
+            {preferencesSettings.map((setting) => (
+              <button
+                key={setting.id}
+                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-[var(--secondary)] transition-colors cursor-pointer text-left"
+                onClick={setting.onClick}
+              >
+                <div className="text-[var(--muted-foreground)]">{setting.icon}</div>
+                <div className="flex-1">
+                  <p className="text-sm">{setting.label}</p>
+                  {setting.description && (
+                    <p className="text-xs text-[var(--muted-foreground)]">{setting.description}</p>
+                  )}
+                </div>
+                {setting.action && !setting.onClick && (
+                  <p className="text-sm text-[var(--muted-foreground)]">{setting.action}</p>
+                )}
+                {setting.onClick && (
+                  <svg className="w-4 h-4 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
+                {setting.id === "dark-mode" && (
+                  <div 
+                    className={cn("ig-toggle", darkMode ? "ig-toggle-active" : "ig-toggle-inactive")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDarkMode(!darkMode);
+                    }}
+                  >
+                    <div className="ig-toggle-thumb" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
 
-        {/* Version */}
-        <div className="pb-8 text-center">
-          <p className="text-xs text-muted-foreground">Version 1.0.0</p>
+          {/* More Settings */}
+          <div className="border-b border-[var(--border)]">
+            <div className="px-4 py-2">
+              <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">More</p>
+            </div>
+            {moreSettings.map((setting) => (
+              <button
+                key={setting.id}
+                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-[var(--secondary)] transition-colors cursor-pointer text-left"
+                onClick={setting.onClick}
+              >
+                <div className="text-[var(--muted-foreground)]">{setting.icon}</div>
+                <div className="flex-1">
+                  <p className="text-sm">{setting.label}</p>
+                  {setting.description && (
+                    <p className="text-xs text-[var(--muted-foreground)]">{setting.description}</p>
+                  )}
+                </div>
+                <svg className="w-4 h-4 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
+
+          {/* Logout */}
+          <div className="p-4">
+            <Button
+              variant="ghost"
+              className="w-full text-[var(--primary)] hover:bg-[var(--secondary)]"
+              onClick={() => router.push("/login")}
+            >
+              Log Out
+            </Button>
+          </div>
+
+          {/* Version */}
+          <div className="pb-8 text-center">
+            <p className="text-xs text-[var(--muted-foreground)]">Version 1.0.0</p>
+          </div>
         </div>
       </main>
 
-      {/* Spacer for bottom nav */}
+      {/* Mobile bottom spacer */}
       <div className="h-20 md:hidden" />
     </div>
   );
