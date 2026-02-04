@@ -502,7 +502,12 @@
 }
 
 .vellon-card-hover {
-  @apply hover:shadow-md hover:border-[var(--primary)]/20 hover:-translate-y-0.5;
+  @apply hover:shadow-md hover:-translate-y-0.5;
+  transition: all var(--transition-normal);
+}
+
+.vellon-card-hover:hover {
+  border-color: color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .vellon-card-interactive {
@@ -564,7 +569,8 @@
 }
 
 .vellon-btn-outline:hover {
-  @apply bg-[var(--secondary)] border-[var(--primary)]/50;
+  @apply bg-[var(--secondary)];
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
   transform: translateY(-1px);
 }
 
@@ -607,27 +613,43 @@
 /* Vellon Input Styles - Premium */
 .vellon-input {
   @apply w-full px-4 py-2.5 bg-[var(--background)] rounded-lg border border-[var(--border)] 
-         focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 
+         focus:outline-none focus:border-[var(--primary)] 
          transition-all duration-200 placeholder:text-[var(--muted-foreground)];
+  --tw-ring-color: color-mix(in srgb, var(--primary) 20%, transparent);
   font-size: 0.9375rem;
   letter-spacing: 0.01em;
 }
 
+.vellon-input:focus {
+  box-shadow: 0 0 0 2px var(--tw-ring-color);
+}
+
 .vellon-input:hover {
-  @apply border-[var(--muted-foreground)]/50;
+  border-color: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
 }
 
 .vellon-input-premium {
   @apply w-full px-4 py-3 bg-[var(--background)] rounded-lg border border-[var(--border)] 
-         focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 
-         transition-all duration-200 placeholder:text-[var(--muted-foreground)] shadow-inner;
+         focus:outline-none focus:border-[var(--primary)] 
+         transition-all duration-200 placeholder:text-[var(--muted-foreground)];
+  --tw-ring-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.vellon-input-premium:focus {
+  box-shadow: 0 0 0 2px var(--tw-ring-color), inset 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 .vellon-textarea {
   @apply w-full px-4 py-3 bg-[var(--background)] rounded-lg border border-[var(--border)] 
-         focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 
-         transition-all duration-200 placeholder:text-[var(--muted-foreground)] resize-none;
+         focus:outline-none focus:border-[var(--primary)] 
+         transition-all duration-200 placeholder:text-[var(--muted-foreground)];
+  --tw-ring-color: color-mix(in srgb, var(--primary) 20%, transparent);
   min-height: 100px;
+}
+
+.vellon-textarea:focus {
+  box-shadow: 0 0 0 2px var(--tw-ring-color);
 }
 
 /* Vellon Avatar Styles */
@@ -658,7 +680,9 @@
 }
 
 .vellon-badge-primary {
-  @apply bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20;
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .vellon-badge-secondary {
@@ -674,15 +698,21 @@
 }
 
 .vellon-badge-success {
-  @apply bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20;
+  background-color: color-mix(in srgb, var(--success) 10%, transparent);
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 20%, transparent);
 }
 
 .vellon-badge-warning {
-  @apply bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/20;
+  background-color: color-mix(in srgb, var(--warning) 10%, transparent);
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 20%, transparent);
 }
 
 .vellon-badge-destructive {
-  @apply bg-[var(--destructive)]/10 text-[var(--destructive)] border border-[var(--destructive)]/20;
+  background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+  border-color: color-mix(in srgb, var(--destructive) 20%, transparent);
 }
 
 .vellon-badge-lg {
@@ -699,7 +729,8 @@
 }
 
 .vellon-nav-item-active {
-  @apply bg-[var(--primary)]/10 text-[var(--primary)];
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
 }
 
 .vellon-nav-item-inactive {
@@ -760,8 +791,13 @@
 
 .vellon-search-input {
   @apply w-full pl-10 pr-4 py-2.5 bg-[var(--background)] rounded-lg border border-[var(--border)] 
-         focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 
+         focus:outline-none focus:border-[var(--primary)] 
          transition-all duration-200 placeholder:text-[var(--muted-foreground)];
+  --tw-ring-color: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.vellon-search-input:focus {
+  box-shadow: 0 0 0 2px var(--tw-ring-color);
 }
 
 .vellon-search-icon {
@@ -819,11 +855,13 @@
 }
 
 .vellon-loader-lg {
-  @apply w-10 h-10 border-3;
+  @apply w-10 h-10;
+  border-width: 3px;
 }
 
 .vellon-loader-sm {
-  @apply w-4 h-4 border;
+  @apply w-4 h-4;
+  border-width: 1px;
 }
 
 .vellon-loading-dots {
