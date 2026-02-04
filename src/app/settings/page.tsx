@@ -112,17 +112,19 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+  const [isMounted, setIsMounted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Handle direct navigation to specific tab via query parameter
+  // Handle direct navigation to specific tab via query parameter (client-side only)
   useEffect(() => {
+    setIsMounted(true);
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get("tab");
     if (tabParam && ["profile", "account", "privacy", "preferences", "security", "more"].includes(tabParam)) {
       setActiveTab(tabParam as SettingsTab);
     }
   }, []);
-  const [isSaving, setIsSaving] = useState(false);
-  const [toasts, setToasts] = useState<Toast[]>([]);
 
   // Form state
   const [formData, setFormData] = useState<ProfileFormData>({
@@ -159,8 +161,9 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  // Load preferences from localStorage on mount
+  // Load preferences from localStorage on mount (client-side only)
   useEffect(() => {
+    if (!isMounted) return;
     const savedPrefs = localStorage.getItem("userPreferences");
     if (savedPrefs) {
       try {
@@ -173,6 +176,7 @@ export default function SettingsPage() {
 
   // Save preferences to localStorage
   const savePreferences = useCallback((newPrefs: UserPreferences) => {
+    if (!isMounted) return;
     localStorage.setItem("userPreferences", JSON.stringify(newPrefs));
     setPreferences(newPrefs);
   }, []);
