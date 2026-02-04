@@ -22,11 +22,15 @@ async function initRedis() {
 
   try {
     redisClient = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379'
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      socket: {
+        reconnectStrategy: false // Don't auto-reconnect
+      }
     });
 
     redisClient.on('error', (err) => {
-      console.error('Redis Client Error:', err);
+      // Only log, don't retry
+      console.warn('Redis Client Error (using in-memory fallback):', err.message);
     });
 
     redisClient.on('connect', () => {
