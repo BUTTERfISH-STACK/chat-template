@@ -162,10 +162,10 @@ export default function OTPPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-3 sm:px-4">
       {/* Logo */}
-      <div className="mb-8">
-        <svg className="h-12 w-auto" viewBox="0 0 200 50" fill="none">
+      <div className="mb-6 sm:mb-8">
+        <svg className="h-10 w-auto sm:h-12" viewBox="0 0 200 50" fill="none">
           <text x="0" y="38" fontFamily="inherit" fontSize="28" fontWeight="bold" fill="currentColor">
             Vellon X
           </text>
@@ -173,16 +173,16 @@ export default function OTPPage() {
       </div>
 
       {/* OTP Info */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-semibold mb-2">
+      <div className="text-center mb-6 sm:mb-8 px-2">
+        <h1 className="text-xl sm:text-2xl font-semibold mb-2">
           {isSignup ? "Create your account" : "Enter code"}
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           We've sent a code to <span className="font-semibold">{phoneNumber}</span>
         </p>
         <button
           onClick={handleEditPhone}
-          className="text-primary text-sm hover:underline mt-1"
+          className="text-primary text-xs sm:text-sm hover:underline mt-1"
         >
           Edit phone number
         </button>
@@ -190,7 +190,7 @@ export default function OTPPage() {
 
       {/* OTP Form */}
       <form onSubmit={handleSubmit} className="w-full max-w-sm">
-        <div className="flex justify-center gap-2 mb-6">
+        <div className="flex justify-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
           {otp.map((digit, index) => (
             <input
               key={index}
@@ -201,7 +201,7 @@ export default function OTPPage() {
               value={digit}
               onChange={(e) => handleInputChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className="w-12 h-14 text-center text-xl font-semibold bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+              className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-semibold bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all"
               placeholder="0"
             />
           ))}
@@ -213,7 +213,7 @@ export default function OTPPage() {
 
         <Button
           type="submit"
-          className="w-full font-semibold py-6"
+          className="w-full font-semibold py-4 sm:py-6"
           disabled={isLoading || otp.join("").length !== 6}
         >
           {isLoading ? (
@@ -230,15 +230,15 @@ export default function OTPPage() {
       </form>
 
       {/* Resend Option */}
-      <div className="mt-6 text-center">
+      <div className="mt-4 sm:mt-6 text-center">
         {resendTimer > 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Resend code in <span className="font-semibold">{resendTimer}s</span>
           </p>
         ) : (
           <button
             onClick={handleResend}
-            className="text-primary font-semibold text-sm hover:underline"
+            className="text-primary font-semibold text-xs sm:text-sm hover:underline"
           >
             Resend code
           </button>
@@ -246,10 +246,10 @@ export default function OTPPage() {
       </div>
 
       {/* Back Link */}
-      <div className="mt-8">
+      <div className="mt-6 sm:mt-8">
         <button 
           onClick={handleEditPhone}
-          className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1"
+          className="text-xs sm:text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

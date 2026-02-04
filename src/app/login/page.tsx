@@ -56,10 +56,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-3 sm:px-4">
       {/* Logo */}
-      <div className="mb-8">
-        <svg className="h-12 w-auto" viewBox="0 0 200 50" fill="none">
+      <div className="mb-6 sm:mb-8">
+        <svg className="h-10 w-auto sm:h-12" viewBox="0 0 200 50" fill="none">
           <text x="0" y="38" fontFamily="inherit" fontSize="28" fontWeight="bold" fill="currentColor">
             Vellon X
           </text>
@@ -67,9 +67,9 @@ export default function LoginPage() {
       </div>
 
       {/* Welcome Text */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-semibold mb-2">Welcome to Vellon X</h1>
-        <p className="text-muted-foreground">Enter your phone number to continue</p>
+      <div className="text-center mb-6 sm:mb-8 px-2">
+        <h1 className="text-xl sm:text-2xl font-semibold mb-2">Welcome to Vellon X</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Enter your phone number to continue</p>
       </div>
 
       {/* Phone Login Form */}
@@ -80,14 +80,14 @@ export default function LoginPage() {
             placeholder="+27 82 123 4567"
             value={phoneNumber}
             onChange={handlePhoneChange}
-            className="w-full px-4 py-4 bg-secondary border border-border rounded-lg text-center text-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            className="w-full px-4 py-3 sm:py-4 bg-secondary border border-border rounded-lg text-center text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all"
           />
           {error && <p className="text-sm text-destructive mt-2">{error}</p>}
         </div>
         
         <Button
           type="submit"
-          className="w-full font-semibold py-6"
+          className="w-full font-semibold py-3 sm:py-6"
           disabled={isLoading || phoneNumber.length < 10}
         >
           {isLoading ? (
@@ -102,7 +102,7 @@ export default function LoginPage() {
       </form>
 
       {/* Sign Up Link */}
-      <div className="w-full max-w-sm p-4 bg-card rounded-lg border border-border text-center mt-6">
+      <div className="w-full max-w-sm p-3 sm:p-4 bg-card rounded-lg border border-border text-center mt-4 sm:mt-6">
         <p className="text-sm">
           Don't have an account?{" "}
           <Link href="/signup" className="text-primary font-semibold hover:underline">
@@ -112,8 +112,8 @@ export default function LoginPage() {
       </div>
 
       {/* Footer */}
-      <div className="mt-8 text-center">
-        <p className="text-xs text-muted-foreground">
+      <div className="mt-6 sm:mt-8 text-center">
+        <p className="text-xs sm:text-sm text-muted-foreground">
           © 2024 Vellon X
         </p>
       </div>
