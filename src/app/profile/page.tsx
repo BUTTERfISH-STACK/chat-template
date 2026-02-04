@@ -7,29 +7,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
 
-// Mock data
+// User data - populated from API
 const user = {
-  name: "John Doe",
-  username: "johndoe",
-  bio: "Digital creator | Coffee enthusiast | Living life one post at a time ☕✨",
-  avatar: "/api/placeholder/150/150",
-  posts: 42,
-  followers: 12500,
-  following: 389,
-  isOnline: true,
+  name: "",
+  username: "",
+  bio: "",
+  avatar: "",
+  posts: 0,
+  followers: 0,
+  following: 0,
+  isOnline: false,
 };
 
-const posts = [
-  { id: "1", type: "image", aspectRatio: "square" as const, likes: 234, comments: 12 },
-  { id: "2", type: "image", aspectRatio: "portrait" as const, likes: 567, comments: 34 },
-  { id: "3", type: "image", aspectRatio: "landscape" as const, likes: 189, comments: 8 },
-  { id: "4", type: "image", aspectRatio: "square" as const, likes: 345, comments: 21 },
-  { id: "5", type: "image", aspectRatio: "portrait" as const, likes: 678, comments: 45 },
-  { id: "6", type: "image", aspectRatio: "square" as const, likes: 234, comments: 12 },
-  { id: "7", type: "image", aspectRatio: "landscape" as const, likes: 456, comments: 28 },
-  { id: "8", type: "image", aspectRatio: "portrait" as const, likes: 789, comments: 56 },
-  { id: "9", type: "image", aspectRatio: "square" as const, likes: 123, comments: 7 },
-];
+const posts: { id: string; type: string; aspectRatio: "square" | "portrait" | "landscape"; likes: number; comments: number }[] = [];
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "tagged">("posts");
@@ -185,19 +175,7 @@ export default function ProfilePage() {
           {/* Highlights */}
           <div className="vellon-card-section">
             <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
-              {["Work", "Travel", "Food", "Fitness"].map((highlight, i) => (
-                <div key={highlight} className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group">
-                  <div className={cn(
-                    "w-16 h-16 flex items-center justify-center rounded-full bg-[var(--secondary)] p-[3px]",
-                    i === 0 && "vellon-circle"
-                  )}>
-                    <div className="w-full h-full rounded-full bg-[var(--card)] flex items-center justify-center">
-                      <span className="text-lg">✨</span>
-                    </div>
-                  </div>
-                  <span className="text-xs text-[var(--muted-foreground)]">{highlight}</span>
-                </div>
-              ))}
+              {/* Highlights will be loaded from API */}
             </div>
           </div>
 
@@ -248,46 +226,60 @@ export default function ProfilePage() {
 
           {/* Posts Grid */}
           <div className="p-2">
-            <div className="grid grid-cols-3 gap-1 md:gap-4">
-              {posts.map((post, index) => (
-                <Link
-                  key={post.id}
-                  href={`/post/${post.id}`}
-                  className={cn(
-                    "relative bg-[var(--secondary)] overflow-hidden cursor-pointer group animate-fade-in",
-                    getAspectRatioClass(post.aspectRatio)
-                  )}
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <svg
-                      className="w-10 h-10 text-[var(--muted-foreground)]/50"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
+            {posts.length === 0 ? (
+              <div className="vellon-empty py-12">
+                <div className="vellon-empty-icon">
+                  <svg className="w-8 h-8 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <p className="vellon-empty-title">No posts yet</p>
+                <p className="vellon-empty-description">
+                  Posts will appear here when available.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-1 md:gap-4">
+                {posts.map((post, index) => (
+                  <Link
+                    key={post.id}
+                    href={`/post/${post.id}`}
+                    className={cn(
+                      "relative bg-[var(--secondary)] overflow-hidden cursor-pointer group animate-fade-in",
+                      getAspectRatioClass(post.aspectRatio)
+                    )}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <svg
+                        className="w-10 h-10 text-[var(--muted-foreground)]/50"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
 
-                  {/* Overlay on hover */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
-                    <div className="flex items-center gap-1 text-white">
-                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
-                      <span className="text-sm font-medium">{post.likes}</span>
+                    {/* Overlay on hover */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
+                      <div className="flex items-center gap-1 text-white">
+                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                        <span className="text-sm font-medium">{post.likes}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-white">
+                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                          <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span className="text-sm font-medium">{post.comments}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 text-white">
-                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                        <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span className="text-sm font-medium">{post.comments}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>

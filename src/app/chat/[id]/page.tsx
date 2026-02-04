@@ -28,41 +28,8 @@ interface Conversation {
   messages: Message[];
 }
 
-// Mock conversation data
-const mockConversations: Record<string, Conversation> = {
-  "1": {
-    id: "1",
-    phoneNumber: "+1234567890",
-    name: "Alice Smith",
-    avatar: "/api/placeholder/64/64",
-    isOnline: true,
-    lastSeen: "Online now",
-    messages: [
-      { id: "1", content: "Hi there! 👋", timestamp: "10:00 AM", isOwn: false, status: "read", type: "text" },
-      { id: "2", content: "Hello! How are you?", timestamp: "10:02 AM", isOwn: true, status: "read", type: "text" },
-      { id: "3", content: "I'm doing great, thanks for asking!", timestamp: "10:05 AM", isOwn: false, status: "read", type: "text" },
-      { id: "4", content: "Are you free to chat later?", timestamp: "10:10 AM", isOwn: false, status: "read", type: "text" },
-      { id: "5", content: "Yes, definitely! What time works for you?", timestamp: "10:15 AM", isOwn: true, status: "read", type: "text" },
-      { id: "6", content: "How about 3 PM?", timestamp: "10:20 AM", isOwn: false, status: "read", type: "text" },
-      { id: "7", content: "Perfect! See you then! 🎉", timestamp: "10:25 AM", isOwn: true, status: "read", type: "text" },
-    ],
-  },
-  "2": {
-    id: "2",
-    phoneNumber: "+1987654321",
-    name: "Bob Johnson",
-    avatar: "/api/placeholder/64/64",
-    isOnline: false,
-    lastSeen: "Last seen today at 9:45 AM",
-    messages: [
-      { id: "1", content: "Are we still meeting tomorrow?", timestamp: "9:30 AM", isOwn: true, status: "read", type: "text" },
-      { id: "2", content: "Yes, definitely! What time works for you?", timestamp: "9:35 AM", isOwn: false, status: "read", type: "text" },
-      { id: "3", content: "How about 2 PM?", timestamp: "9:40 AM", isOwn: true, status: "read", type: "text" },
-      { id: "4", content: "Perfect! See you then!", timestamp: "9:42 AM", isOwn: false, status: "read", type: "text" },
-      { id: "5", content: "See you tomorrow! 👋", timestamp: "9:45 AM", isOwn: false, status: "read", type: "text" },
-    ],
-  },
-};
+// Mock conversation data - populated from API
+const mockConversations: Record<string, Conversation> = {};
 
 export default function ChatConversationPage() {
   const params = useParams();
@@ -73,7 +40,7 @@ export default function ChatConversationPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const conversationId = params?.id as string;
-  const conversation = mockConversations[conversationId] || mockConversations["1"];
+  const conversation = mockConversations[conversationId];
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -82,7 +49,9 @@ export default function ChatConversationPage() {
 
   // Initialize messages
   useEffect(() => {
-    setMessages(conversation.messages);
+    if (conversation) {
+      setMessages(conversation.messages);
+    }
   }, [conversation]);
 
   const sendMessage = () => {
@@ -160,19 +129,19 @@ export default function ChatConversationPage() {
         <div className="flex items-center gap-3 flex-1">
           <div className="relative">
             <Avatar className="w-10 h-10">
-              <AvatarImage src={conversation.avatar} alt={conversation.name || conversation.phoneNumber} />
+              <AvatarImage src={conversation?.avatar} alt={conversation?.name || conversation?.phoneNumber} />
               <AvatarFallback>
-                {(conversation.name || conversation.phoneNumber).charAt(0).toUpperCase()}
+                {(conversation?.name || conversation?.phoneNumber || "U").charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            {conversation.isOnline && (
+            {conversation?.isOnline && (
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-primary rounded-full border-2 border-background" />
             )}
           </div>
           <div>
-            <p className="font-semibold">{conversation.name || conversation.phoneNumber}</p>
+            <p className="font-semibold">{conversation?.name || conversation?.phoneNumber || "Unknown"}</p>
             <p className="text-xs text-muted-foreground">
-              {conversation.isOnline ? "Online" : conversation.lastSeen}
+              {conversation?.isOnline ? "Online" : conversation?.lastSeen || "Offline"}
             </p>
           </div>
         </div>
@@ -209,81 +178,87 @@ export default function ChatConversationPage() {
       {/* Messages */}
       <main className="flex-1 pt-16 pb-20 px-4 overflow-y-auto">
         <div className="max-w-2xl mx-auto space-y-2">
-          {messages.map((msg, index) => {
-            const showDate = index === 0 || 
-              new Date(messages[index - 1].timestamp).toDateString() !== new Date(msg.timestamp).toDateString();
-            
-            return (
-              <div key={msg.id}>
-                {showDate && (
-                  <div className="flex items-center justify-center py-2">
-                    <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
-                      {new Date(msg.timestamp).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    "max-w-[75%] rounded-2xl px-4 py-2 relative animate-fade-in",
-                    msg.isOwn
-                      ? "ml-auto bg-primary text-primary-foreground rounded-br-sm"
-                      : "bg-secondary text-foreground rounded-bl-sm"
-                  )}
-                >
-                  {msg.type === "text" ? (
-                    <p className="text-sm">{msg.content}</p>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-sm">Media</span>
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full py-20">
+              <p className="text-muted-foreground">No messages yet. Start a conversation!</p>
+            </div>
+          ) : (
+            messages.map((msg, index) => {
+              const showDate = index === 0 || 
+                new Date(messages[index - 1].timestamp).toDateString() !== new Date(msg.timestamp).toDateString();
+              
+              return (
+                <div key={msg.id}>
+                  {showDate && (
+                    <div className="flex items-center justify-center py-2">
+                      <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
+                        {new Date(msg.timestamp).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
+                      </span>
                     </div>
                   )}
-                  <div className={cn(
-                    "flex items-center gap-1 mt-1",
-                    msg.isOwn ? "justify-end" : "justify-start"
-                  )}>
-                    <span className={cn(
-                      "text-[10px]",
-                      msg.isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
-                    )}>
-                      {formatTime(msg.timestamp)}
-                    </span>
-                    {msg.isOwn && (
-                      <div className="flex items-center gap-0.5">
-                        {msg.status === "sent" && (
-                          <svg className="w-3 h-3 text-primary-foreground/70" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                          </svg>
-                        )}
-                        {msg.status === "delivered" && (
-                          <>
-                            <svg className="w-3 h-3 text-primary-foreground/70" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                            </svg>
-                            <svg className="w-3 h-3 text-primary-foreground/70" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                            </svg>
-                          </>
-                        )}
-                        {msg.status === "read" && (
-                          <>
-                            <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                            </svg>
-                            <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-                            </svg>
-                          </>
-                        )}
+                  <div
+                    className={cn(
+                      "max-w-[75%] rounded-2xl px-4 py-2 relative animate-fade-in",
+                      msg.isOwn
+                        ? "ml-auto bg-primary text-primary-foreground rounded-br-sm"
+                        : "bg-secondary text-foreground rounded-bl-sm"
+                    )}
+                  >
+                    {msg.type === "text" ? (
+                      <p className="text-sm">{msg.content}</p>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm">Media</span>
                       </div>
                     )}
+                    <div className={cn(
+                      "flex items-center gap-1 mt-1",
+                      msg.isOwn ? "justify-end" : "justify-start"
+                    )}>
+                      <span className={cn(
+                        "text-[10px]",
+                        msg.isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
+                      )}>
+                        {formatTime(msg.timestamp)}
+                      </span>
+                      {msg.isOwn && (
+                        <div className="flex items-center gap-0.5">
+                          {msg.status === "sent" && (
+                            <svg className="w-3 h-3 text-primary-foreground/70" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                            </svg>
+                          )}
+                          {msg.status === "delivered" && (
+                            <>
+                              <svg className="w-3 h-3 text-primary-foreground/70" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                              </svg>
+                              <svg className="w-3 h-3 text-primary-foreground/70" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                              </svg>
+                            </>
+                          )}
+                          {msg.status === "read" && (
+                            <>
+                              <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                              </svg>
+                              <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+                              </svg>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
           
           {/* Typing indicator */}
           {isTyping && (

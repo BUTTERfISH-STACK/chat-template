@@ -31,86 +31,8 @@ interface Message {
   mediaUrl?: string;
 }
 
-// Mock conversations data
-const mockConversations: Conversation[] = [
-  {
-    id: "1",
-    phoneNumber: "+1234567890",
-    name: "Alice Smith",
-    avatar: "/api/placeholder/64/64",
-    lastMessage: "Hey! How are you doing?",
-    timestamp: "10:30 AM",
-    unreadCount: 2,
-    isOnline: true,
-    messages: [
-      { id: "1", content: "Hi there!", timestamp: "10:00 AM", isOwn: false, status: "read", type: "text" },
-      { id: "2", content: "Hello! I'm doing great, thanks!", timestamp: "10:02 AM", isOwn: true, status: "read", type: "text" },
-      { id: "3", content: "Hey! How are you doing?", timestamp: "10:30 AM", isOwn: false, status: "read", type: "text" },
-    ],
-  },
-  {
-    id: "2",
-    phoneNumber: "+1987654321",
-    name: "Bob Johnson",
-    avatar: "/api/placeholder/64/64",
-    lastMessage: "See you tomorrow! 👋",
-    timestamp: "9:45 AM",
-    unreadCount: 0,
-    isOnline: false,
-    messages: [
-      { id: "1", content: "Are we still meeting tomorrow?", timestamp: "9:30 AM", isOwn: true, status: "read", type: "text" },
-      { id: "2", content: "Yes, definitely! What time works for you?", timestamp: "9:35 AM", isOwn: false, status: "read", type: "text" },
-      { id: "3", content: "How about 2 PM?", timestamp: "9:40 AM", isOwn: true, status: "read", type: "text" },
-      { id: "4", content: "Perfect! See you then!", timestamp: "9:42 AM", isOwn: false, status: "read", type: "text" },
-      { id: "5", content: "See you tomorrow! 👋", timestamp: "9:45 AM", isOwn: false, status: "read", type: "text" },
-    ],
-  },
-  {
-    id: "3",
-    phoneNumber: "+1555123456",
-    name: "Carol White",
-    avatar: "/api/placeholder/64/64",
-    lastMessage: "The project looks amazing! 🎉",
-    timestamp: "Yesterday",
-    unreadCount: 1,
-    isOnline: true,
-    messages: [
-      { id: "1", content: "I just finished the new design", timestamp: "Yesterday", isOwn: false, status: "delivered", type: "text" },
-      { id: "2", content: "Let me take a look", timestamp: "Yesterday", isOwn: true, status: "read", type: "text" },
-      { id: "3", content: "The project looks amazing! 🎉", timestamp: "Yesterday", isOwn: false, status: "read", type: "text" },
-    ],
-  },
-  {
-    id: "4",
-    phoneNumber: "+1999888777",
-    name: "David Brown",
-    avatar: "/api/placeholder/64/64",
-    lastMessage: "Thanks for the help!",
-    timestamp: "Yesterday",
-    unreadCount: 0,
-    isOnline: false,
-    messages: [
-      { id: "1", content: "Can you help me with something?", timestamp: "Yesterday", isOwn: false, status: "read", type: "text" },
-      { id: "2", content: "Sure, what do you need?", timestamp: "Yesterday", isOwn: true, status: "read", type: "text" },
-      { id: "3", content: "Thanks for the help!", timestamp: "Yesterday", isOwn: false, status: "read", type: "text" },
-    ],
-  },
-  {
-    id: "5",
-    phoneNumber: "+1444555666",
-    name: "Emma Wilson",
-    avatar: "/api/placeholder/64/64",
-    lastMessage: "Can't wait to see you!",
-    timestamp: "Monday",
-    unreadCount: 0,
-    isOnline: true,
-    messages: [
-      { id: "1", content: "Are you coming to the event?", timestamp: "Monday", isOwn: false, status: "read", type: "text" },
-      { id: "2", content: "Yes, I'll be there!", timestamp: "Monday", isOwn: true, status: "read", type: "text" },
-      { id: "3", content: "Can't wait to see you!", timestamp: "Monday", isOwn: false, status: "read", type: "text" },
-    ],
-  },
-];
+// Conversations data - populated from API
+const mockConversations: Conversation[] = [];
 
 export default function ChatPage() {
   const router = useRouter();

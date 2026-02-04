@@ -7,11 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
 
-// Mock user data
+// User data - populated from API
 const mockUser = {
-  username: "johndoe",
-  name: "John Doe",
-  avatar: "/api/placeholder/150/150",
+  username: "",
+  name: "",
+  avatar: "",
 };
 
 interface SettingItem {

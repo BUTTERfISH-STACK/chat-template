@@ -118,8 +118,8 @@ export function InstagramNav({ items = defaultNavItems, className }: InstagramNa
               {item.href === "/profile" && (item.href === "/profile" && isProfileRoute) ? (
                 <div className="relative">
                   <Avatar className="ig-avatar-small">
-                    <AvatarImage src="/api/placeholder/32/32" alt="Profile" />
-                    <AvatarFallback className="text-xs">JD</AvatarFallback>
+                    <AvatarImage src="" alt="Profile" />
+                    <AvatarFallback className="text-xs">P</AvatarFallback>
                   </Avatar>
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background" />
                 </div>
@@ -164,8 +164,8 @@ export function InstagramNav({ items = defaultNavItems, className }: InstagramNa
               {item.href === "/profile" && isActive ? (
                 <div className="relative">
                   <Avatar className="ig-avatar-small">
-                    <AvatarImage src="/api/placeholder/32/32" alt="Profile" />
-                    <AvatarFallback className="text-xs">JD</AvatarFallback>
+                    <AvatarImage src="" alt="Profile" />
+                    <AvatarFallback className="text-xs">P</AvatarFallback>
                   </Avatar>
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background" />
                 </div>

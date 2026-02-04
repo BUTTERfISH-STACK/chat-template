@@ -65,32 +65,40 @@ export default function OTPPage() {
 
     setIsLoading(true);
 
-    // Simulate OTP verification
-    setTimeout(() => {
-      // For demo, accept any 6-digit code
-      // In production, this would verify against the server
-      if (otpCode === "123456") {
-        // Demo code - accept
-        sessionStorage.setItem("authToken", "demo-token");
+    // Verify OTP with server
+    try {
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber,
+          otpCode,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("userPhone", phoneNumber);
+        router.push("/");
       } else {
-        // Real verification would happen here
-        sessionStorage.setItem("authToken", "demo-token");
-        sessionStorage.setItem("userPhone", phoneNumber);
+        setError("Invalid OTP code. Please try again.");
+        setOtp(["", "", "", "", "", ""]);
       }
-      
-      router.push("/");
-    }, 1500);
+    } catch (error) {
+      setError("Verification failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResend = () => {
     if (resendTimer > 0) return;
     
     setResendTimer(60);
-    // Simulate resending OTP
-    setTimeout(() => {
-      // OTP resent
-    }, 1000);
+    // Resend OTP via API
   };
 
   return (
@@ -178,13 +186,6 @@ export default function OTPPage() {
           </svg>
           Back to login
         </Link>
-      </div>
-
-      {/* Demo Info */}
-      <div className="mt-8 p-4 bg-secondary rounded-lg max-w-sm">
-        <p className="text-xs text-muted-foreground text-center">
-          <strong>Demo:</strong> Enter <span className="font-mono">123456</span> as the OTP code
-        </p>
       </div>
     </div>
   );

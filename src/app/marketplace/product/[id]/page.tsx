@@ -26,25 +26,20 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
 
-  // Mock product data
-  const mockProduct: Product = {
-    id: productId,
-    name: "Premium Wireless Headphones",
-    price: 299.99,
-    seller: "TechStore",
-    sellerId: "s1",
-    category: "Electronics",
-    description: "High-quality wireless headphones with noise cancellation. Features include:\n\n• Active noise cancellation\n• 30-hour battery life\n• Premium comfort padding\n• Bluetooth 5.0 connectivity\n• Built-in microphone for calls",
-    stock: 15,
-    createdAt: "2024-01-15",
-  };
-
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setProduct(mockProduct);
-      setIsLoading(false);
-    }, 500);
+    // Fetch product data from API
+    const fetchProduct = async () => {
+      try {
+        // API call would go here
+        setProduct(null);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchProduct();
   }, [productId]);
 
   const handleAddToCart = () => {
@@ -54,7 +49,9 @@ export default function ProductDetailPage() {
 
   const handleContactSeller = () => {
     // TODO: Navigate to chat with seller
-    router.push(`/chat/${product?.sellerId}`);
+    if (product) {
+      router.push(`/chat/${product.sellerId}`);
+    }
   };
 
   if (isLoading) {
@@ -89,8 +86,28 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Product not found</p>
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="chat-header flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">Product Details</h1>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <svg className="w-16 h-16 text-muted-foreground mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-muted-foreground">Product not found</p>
+          </div>
+        </main>
       </div>
     );
   }
