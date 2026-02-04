@@ -112,6 +112,15 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+
+  // Handle direct navigation to specific tab via query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab");
+    if (tabParam && ["profile", "account", "privacy", "preferences", "security", "more"].includes(tabParam)) {
+      setActiveTab(tabParam as SettingsTab);
+    }
+  }, []);
   const [isSaving, setIsSaving] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 

@@ -112,11 +112,18 @@ export default function ProfilePage() {
                   </h1>
                   <div className="flex items-center gap-2">
                     {isOwnProfile ? (
-                      <Link href="/settings">
-                        <Button className="vellon-btn vellon-btn-secondary px-6">
-                          Edit Profile
-                        </Button>
-                      </Link>
+                      <>
+                        <Link href="/settings">
+                          <Button className="vellon-btn vellon-btn-secondary px-6">
+                            Edit Profile
+                          </Button>
+                        </Link>
+                        <Link href="/settings?tab=privacy">
+                          <Button variant="outline" className="vellon-btn px-6">
+                            Privacy
+                          </Button>
+                        </Link>
+                      </>
                     ) : (
                       <>
                         <Button
@@ -222,11 +229,18 @@ export default function ProfilePage() {
 
               <div className="flex gap-2">
                 {isOwnProfile ? (
-                  <Link href="/settings" className="flex-1">
-                    <Button className="w-full vellon-btn vellon-btn-secondary">
-                      Edit Profile
-                    </Button>
-                  </Link>
+                  <>
+                    <Link href="/settings" className="flex-1">
+                      <Button className="w-full vellon-btn vellon-btn-secondary">
+                        Edit Profile
+                      </Button>
+                    </Link>
+                    <Link href="/settings?tab=privacy" className="flex-1">
+                      <Button variant="outline" className="w-full vellon-btn">
+                        Privacy
+                      </Button>
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <Button
