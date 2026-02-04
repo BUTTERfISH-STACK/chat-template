@@ -12,13 +12,17 @@ export default function OTPPage() {
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(60);
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [isSignup, setIsSignup] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    // Get phone number from session storage
+    // Get phone number and signup flag from session storage
     const storedPhone = sessionStorage.getItem("phoneNumber");
+    const signupFlag = sessionStorage.getItem("isSignup");
+    
     if (storedPhone) {
       setPhoneNumber(storedPhone);
+      setIsSignup(signupFlag === "true");
     } else {
       // Redirect to login if no phone number
       router.push("/login");
@@ -67,7 +71,8 @@ export default function OTPPage() {
 
     // Verify OTP with server
     try {
-      const response = await fetch("/api/auth/verify-otp", {
+      const endpoint = isSignup ? "/api/auth/verify-signup-otp" : "/api/auth/verify-otp";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,9 +87,11 @@ export default function OTPPage() {
         const data = await response.json();
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("userPhone", phoneNumber);
+        // Clear signup flag
+        sessionStorage.removeItem("isSignup");
         router.push("/");
       } else {
-        setError("Invalid OTP code. Please try again.");
+        setError("Invalid code. Please try again.");
         setOtp(["", "", "", "", "", ""]);
       }
     } catch (error) {
@@ -94,11 +101,26 @@ export default function OTPPage() {
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (resendTimer > 0) return;
     
     setResendTimer(60);
+
     // Resend OTP via API
+    try {
+      const digits = phoneNumber.replace(/\D/g, "");
+      await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber: `+${digits}`,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to resend OTP");
+    }
   };
 
   return (
@@ -114,7 +136,9 @@ export default function OTPPage() {
 
       {/* OTP Info */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-semibold mb-2">Enter code</h1>
+        <h1 className="text-2xl font-semibold mb-2">
+          {isSignup ? "Create your account" : "Enter code"}
+        </h1>
         <p className="text-muted-foreground">
           We've sent a code to <span className="font-semibold">{phoneNumber}</span>
         </p>
@@ -153,6 +177,8 @@ export default function OTPPage() {
               <div className="ig-loader" />
               <span>Verifying...</span>
             </div>
+          ) : isSignup ? (
+            "Create Account"
           ) : (
             "Verify"
           )}
@@ -177,15 +203,18 @@ export default function OTPPage() {
 
       {/* Back Link */}
       <div className="mt-8">
-        <Link 
-          href="/login" 
+        <button 
+          onClick={() => {
+            sessionStorage.removeItem("isSignup");
+            router.push("/login");
+          }}
           className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to login
-        </Link>
+          Back
+        </button>
       </div>
     </div>
   );
