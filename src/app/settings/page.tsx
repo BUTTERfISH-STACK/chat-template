@@ -54,6 +54,53 @@ interface PrivacySettings {
   dataDeletionRequested: boolean;
 }
 
+// Security settings interface
+interface SecuritySettings {
+  // Password
+  lastPasswordChange: string | null;
+  passwordStrength: "weak" | "medium" | "strong";
+  
+  // Two-Factor Authentication
+  twoFactorEnabled: boolean;
+  twoFactorMethod: "authenticator" | "sms" | "email" | null;
+  backupCodesGenerated: boolean;
+  
+  // Session Management
+  sessionTimeout: 5 | 15 | 30 | 60 | 120; // minutes
+  activeSessions: SessionInfo[];
+  
+  // Login Monitoring
+  loginAttempts: LoginAttempt[];
+  
+  // Account Recovery
+  securityQuestionsSet: boolean;
+  recoveryEmailSet: boolean;
+  recoveryPhoneSet: boolean;
+}
+
+// Session info interface
+interface SessionInfo {
+  id: string;
+  device: string;
+  browser: string;
+  os: string;
+  location: string;
+  ip: string;
+  lastActive: string;
+  isCurrent: boolean;
+}
+
+// Login attempt interface
+interface LoginAttempt {
+  id: string;
+  timestamp: string;
+  ip: string;
+  device: string;
+  location: string;
+  success: boolean;
+  method: "password" | "otp" | "social";
+}
+
 // Form validation types
 interface ProfileFormData {
   name: string;
@@ -200,6 +247,93 @@ export default function SettingsPage() {
     dataDeletionRequested: false,
   });
 
+  // Security settings state
+  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
+    lastPasswordChange: null,
+    passwordStrength: "medium",
+    twoFactorEnabled: false,
+    twoFactorMethod: null,
+    backupCodesGenerated: false,
+    sessionTimeout: 30,
+    activeSessions: [
+      {
+        id: "1",
+        device: "Chrome on Windows",
+        browser: "Chrome 120",
+        os: "Windows 11",
+        location: "Johannesburg, South Africa",
+        ip: "192.168.1.100",
+        lastActive: new Date().toISOString(),
+        isCurrent: true,
+      },
+      {
+        id: "2",
+        device: "Safari on iPhone",
+        browser: "Safari 17",
+        os: "iOS 17",
+        location: "Cape Town, South Africa",
+        ip: "192.168.1.101",
+        lastActive: new Date(Date.now() - 3600000).toISOString(),
+        isCurrent: false,
+      },
+    ],
+    loginAttempts: [
+      {
+        id: "1",
+        timestamp: new Date().toISOString(),
+        ip: "192.168.1.100",
+        device: "Chrome on Windows",
+        location: "Johannesburg, South Africa",
+        success: true,
+        method: "password",
+      },
+      {
+        id: "2",
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        ip: "192.168.1.102",
+        device: "Unknown Browser",
+        location: "Pretoria, South Africa",
+        success: false,
+        method: "password",
+      },
+      {
+        id: "3",
+        timestamp: new Date(Date.now() - 172800000).toISOString(),
+        ip: "192.168.1.100",
+        device: "Chrome on Windows",
+        location: "Johannesburg, South Africa",
+        success: true,
+        method: "otp",
+      },
+    ],
+    securityQuestionsSet: false,
+    recoveryEmailSet: true,
+    recoveryPhoneSet: false,
+  });
+
+  // Password change form state
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+
+  // 2FA setup state
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [twoFactorMethod, setTwoFactorMethod] = useState<"authenticator" | "sms" | "email">("authenticator");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [showBackupCodes, setShowBackupCodes] = useState(false);
+  
+  // Session timeout options
+  const sessionTimeoutOptions = [
+    { value: 5, label: "5 minutes" },
+    { value: 15, label: "15 minutes" },
+    { value: 30, label: "30 minutes" },
+    { value: 60, label: "1 hour" },
+    { value: 120, label: "2 hours" },
+  ];
+
   // Initialize form data from user
   useEffect(() => {
     if (user) {
@@ -238,6 +372,19 @@ export default function SettingsPage() {
     }
   }, [isMounted]);
 
+  // Load security settings from localStorage on mount (client-side only)
+  useEffect(() => {
+    if (!isMounted) return;
+    const savedSecurity = localStorage.getItem("securitySettings");
+    if (savedSecurity) {
+      try {
+        setSecuritySettings(JSON.parse(savedSecurity));
+      } catch (e) {
+        console.error("Failed to parse security settings:", e);
+      }
+    }
+  }, [isMounted]);
+
   // Save preferences to localStorage
   const savePreferences = useCallback((newPrefs: UserPreferences) => {
     if (!isMounted) return;
@@ -250,6 +397,13 @@ export default function SettingsPage() {
     if (!isMounted) return;
     localStorage.setItem("privacySettings", JSON.stringify(newSettings));
     setPrivacySettings(newSettings);
+  }, [isMounted]);
+
+  // Save security settings to localStorage
+  const saveSecuritySettings = useCallback((newSettings: SecuritySettings) => {
+    if (!isMounted) return;
+    localStorage.setItem("securitySettings", JSON.stringify(newSettings));
+    setSecuritySettings(newSettings);
   }, [isMounted]);
 
   // Validation functions
@@ -410,6 +564,212 @@ export default function SettingsPage() {
   // Handle blocked user management
   const handleManageBlocked = () => {
     showToast("info", "Blocked users management coming soon!");
+  };
+
+  // Password strength checker
+  const checkPasswordStrength = (password: string): { strength: "weak" | "medium" | "strong"; message: string } => {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 2) return { strength: "weak", message: "Weak - Add more characters and variety" };
+    if (score <= 3) return { strength: "medium", message: "Medium - Add special characters" };
+    return { strength: "strong", message: "Strong - Great password!" };
+  };
+
+  // Handle password change
+  const handlePasswordChange = async () => {
+    const errors: Record<string, string> = {};
+    
+    if (!passwordForm.currentPassword) {
+      errors.currentPassword = "Current password is required";
+    }
+    
+    if (passwordForm.newPassword.length < 8) {
+      errors.newPassword = "Password must be at least 8 characters";
+    }
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+
+    const strength = checkPasswordStrength(passwordForm.newPassword);
+    if (strength.strength === "weak") {
+      errors.newPassword = "Password is too weak";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Update security settings
+      const newSettings = {
+        ...securitySettings,
+        lastPasswordChange: new Date().toISOString(),
+        passwordStrength: strength.strength,
+      };
+      saveSecuritySettings(newSettings);
+
+      // Clear form
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordErrors({});
+
+      showToast("success", "Password changed successfully!");
+    } catch (error) {
+      console.error("Failed to change password:", error);
+      showToast("error", "Failed to change password. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle 2FA setup
+  const handleStart2FASetup = (method: "authenticator" | "sms" | "email") => {
+    setTwoFactorMethod(method);
+    setShow2FASetup(true);
+    setVerificationCode("");
+    showToast("info", `Setting up 2FA with ${method === "authenticator" ? "authenticator app" : method}`);
+  };
+
+  // Handle 2FA verification
+  const handleVerify2FA = async () => {
+    if (verificationCode.length !== 6) {
+      showToast("error", "Please enter a 6-digit code");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const newSettings = {
+        ...securitySettings,
+        twoFactorEnabled: true,
+        twoFactorMethod: twoFactorMethod,
+        backupCodesGenerated: true,
+      };
+      saveSecuritySettings(newSettings);
+      setShow2FASetup(false);
+      setShowBackupCodes(true);
+      showToast("success", "Two-factor authentication enabled!");
+    } catch (error) {
+      console.error("Failed to enable 2FA:", error);
+      showToast("error", "Invalid verification code. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle 2FA disable
+  const handleDisable2FA = () => {
+    if (confirm("Are you sure you want to disable two-factor authentication? This will make your account less secure.")) {
+      const newSettings = {
+        ...securitySettings,
+        twoFactorEnabled: false,
+        twoFactorMethod: null,
+      };
+      saveSecuritySettings(newSettings);
+      showToast("info", "Two-factor authentication disabled");
+    }
+  };
+
+  // Handle session timeout change
+  const handleSessionTimeoutChange = (timeout: 5 | 15 | 30 | 60 | 120) => {
+    const newSettings = { ...securitySettings, sessionTimeout: timeout };
+    saveSecuritySettings(newSettings);
+    showToast("success", `Session timeout set to ${timeout} minutes`);
+  };
+
+  // Handle session termination
+  const handleTerminateSession = (sessionId: string) => {
+    const session = securitySettings.activeSessions.find(s => s.id === sessionId);
+    if (session?.isCurrent) {
+      showToast("error", "Cannot terminate current session");
+      return;
+    }
+
+    if (confirm("Are you sure you want to terminate this session?")) {
+      const newSessions = securitySettings.activeSessions.filter(s => s.id !== sessionId);
+      const newSettings = { ...securitySettings, activeSessions: newSessions };
+      saveSecuritySettings(newSettings);
+      showToast("success", "Session terminated");
+    }
+  };
+
+  // Handle terminate all other sessions
+  const handleTerminateAllOtherSessions = () => {
+    if (confirm("Are you sure you want to terminate all other sessions? You will be logged out from all devices except this one.")) {
+      const currentSession = securitySettings.activeSessions.find(s => s.isCurrent);
+      const newSettings = {
+        ...securitySettings,
+        activeSessions: currentSession ? [currentSession] : [],
+      };
+      saveSecuritySettings(newSettings);
+      showToast("success", "All other sessions terminated");
+      
+      // Log out after a short delay
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    }
+  };
+
+  // Generate mock backup codes
+  const generateBackupCodes = (): string[] => {
+    const codes: string[] = [];
+    for (let i = 0; i < 10; i++) {
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase() + 
+                  Math.random().toString(36).substring(2, 8).toUpperCase();
+      codes.push(code);
+    }
+    return codes;
+  };
+
+  // Handle backup codes download
+  const handleDownloadBackupCodes = () => {
+    const codes = generateBackupCodes();
+    const content = `Vellon Backup Codes
+Generated: ${new Date().toISOString()}
+
+IMPORTANT: Store these codes in a safe place.
+You can use them to access your account if you lose access to your 2FA device.
+
+${codes.map((code, i) => `${i + 1}. ${code}`).join("\n")}
+
+Each code can only be used once.
+`;
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vellon-backup-codes-${new Date().toISOString().split("T")[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast("success", "Backup codes downloaded!");
+  };
+
+  // Handle security questions setup
+  const handleSetupSecurityQuestions = () => {
+    showToast("info", "Security questions setup coming soon!");
+  };
+
+  // Handle recovery email/phone update
+  const handleUpdateRecoveryInfo = (type: "email" | "phone") => {
+    showToast("info", `${type === "email" ? "Recovery email" : "Recovery phone"} update coming soon!`);
   };
 
   // Handle input changes
@@ -1098,58 +1458,448 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="space-y-4">
-              {/* Password */}
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Password</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      Last changed: Never
-                    </p>
+            {/* Password Management Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Password Management
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                <div className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Password</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Last changed: {securitySettings.lastPasswordChange 
+                          ? new Date(securitySettings.lastPasswordChange).toLocaleDateString()
+                          : "Never"}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm">Change</Button>
                   </div>
-                  <Button variant="outline" size="sm">Change</Button>
+
+                  {/* Password Change Form */}
+                  <div className="space-y-3 pt-2 border-t">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <Input
+                        id="currentPassword"
+                        type="password"
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        className={passwordErrors.currentPassword ? "border-red-500" : ""}
+                      />
+                      {passwordErrors.currentPassword && (
+                        <p className="text-xs text-red-500">{passwordErrors.currentPassword}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => {
+                          setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }));
+                          const strength = checkPasswordStrength(e.target.value);
+                          setSecuritySettings(prev => ({ ...prev, passwordStrength: strength.strength }));
+                        }}
+                        className={passwordErrors.newPassword ? "border-red-500" : ""}
+                      />
+                      {passwordForm.newPassword && (
+                        <p className={`text-xs ${securitySettings.passwordStrength === "strong" ? "text-green-500" : securitySettings.passwordStrength === "medium" ? "text-yellow-500" : "text-red-500"}`}>
+                          {checkPasswordStrength(passwordForm.newPassword).message}
+                        </p>
+                      )}
+                      {passwordErrors.newPassword && (
+                        <p className="text-xs text-red-500">{passwordErrors.newPassword}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        className={passwordErrors.confirmPassword ? "border-red-500" : ""}
+                      />
+                      {passwordErrors.confirmPassword && (
+                        <p className="text-xs text-red-500">{passwordErrors.confirmPassword}</p>
+                      )}
+                    </div>
+                    <Button 
+                      onClick={handlePasswordChange}
+                      disabled={isSaving}
+                      className="w-full"
+                    >
+                      {isSaving ? "Changing..." : "Change Password"}
+                    </Button>
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Two-Factor Authentication */}
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Two-Factor Authentication</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      {user?.isVerified ? "Enabled" : "Disabled"}
-                    </p>
+            {/* Two-Factor Authentication Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Two-Factor Authentication
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Two-Factor Authentication</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        {securitySettings.twoFactorEnabled 
+                          ? `Enabled via ${securitySettings.twoFactorMethod}` 
+                          : "Disabled"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {securitySettings.twoFactorEnabled && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setShowBackupCodes(true)}
+                        >
+                          Backup Codes
+                        </Button>
+                      )}
+                      <Button 
+                        variant={securitySettings.twoFactorEnabled ? "destructive" : "outline"} 
+                        size="sm"
+                        onClick={securitySettings.twoFactorEnabled ? handleDisable2FA : () => handleStart2FASetup("authenticator")}
+                      >
+                        {securitySettings.twoFactorEnabled ? "Disable" : "Enable"}
+                      </Button>
+                    </div>
                   </div>
-                  <Button variant="outline" size="sm">
-                    {user?.isVerified ? "Manage" : "Enable"}
+                </div>
+
+                {/* 2FA Setup Modal */}
+                {show2FASetup && (
+                  <div className="p-4 border rounded-lg bg-[var(--secondary)] space-y-4">
+                    <h4 className="font-medium">Setup Two-Factor Authentication</h4>
+                    
+                    {/* Method Selection */}
+                    <div className="flex gap-2">
+                      <Button 
+                        variant={twoFactorMethod === "authenticator" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setTwoFactorMethod("authenticator")}
+                      >
+                        Authenticator App
+                      </Button>
+                      <Button 
+                        variant={twoFactorMethod === "sms" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setTwoFactorMethod("sms")}
+                      >
+                        SMS
+                      </Button>
+                      <Button 
+                        variant={twoFactorMethod === "email" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setTwoFactorMethod("email")}
+                      >
+                        Email
+                      </Button>
+                    </div>
+
+                    {/* QR Code Display (for authenticator) */}
+                    {twoFactorMethod === "authenticator" && (
+                      <div className="flex flex-col items-center space-y-2 py-4">
+                        <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center border">
+                          <svg className="w-24 h-24 text-[var(--foreground)]" fill="none" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" />
+                            <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" />
+                            <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" />
+                            <rect x="14" y="14" width="4" height="4" rx="1" fill="currentColor" />
+                          </svg>
+                        </div>
+                        <p className="text-xs text-[var(--muted-foreground)]">
+                          Scan this QR code with your authenticator app
+                        </p>
+                        <p className="text-xs font-mono bg-[var(--background)] px-2 py-1 rounded">
+                          VELLON:{user?.phoneNumber || "user"}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Verification Code Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="verificationCode">Verification Code</Label>
+                      <Input
+                        id="verificationCode"
+                        type="text"
+                        placeholder="Enter 6-digit code"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        maxLength={6}
+                        className="text-center text-lg tracking-widest"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShow2FASetup(false)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleVerify2FA}
+                        disabled={isSaving || verificationCode.length !== 6}
+                        className="flex-1"
+                      >
+                        {isSaving ? "Verifying..." : "Verify & Enable"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Backup Codes Display */}
+                {showBackupCodes && securitySettings.backupCodesGenerated && (
+                  <div className="p-4 border rounded-lg bg-[var(--secondary)] space-y-4">
+                    <h4 className="font-medium">Backup Codes</h4>
+                    <p className="text-sm text-[var(--muted-foreground)]">
+                      These codes can be used to access your account if you lose access to your 2FA device. Store them in a safe place.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 font-mono text-sm bg-[var(--background)] p-3 rounded-lg">
+                      {generateBackupCodes().map((code, i) => (
+                        <span key={i} className="px-2 py-1">{code}</span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowBackupCodes(false)}
+                        className="flex-1"
+                      >
+                        Close
+                      </Button>
+                      <Button 
+                        onClick={handleDownloadBackupCodes}
+                        className="flex-1"
+                      >
+                        Download Codes
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Session Management Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                </svg>
+                Active Sessions
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                {/* Session Timeout */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Session Timeout</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Automatically log out after inactivity
+                      </p>
+                    </div>
+                    <select
+                      value={securitySettings.sessionTimeout}
+                      onChange={(e) => handleSessionTimeoutChange(Number(e.target.value) as 5 | 15 | 30 | 60 | 120)}
+                      className="px-3 py-2 border rounded-lg bg-[var(--background)] text-sm"
+                    >
+                      {sessionTimeoutOptions.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Active Sessions List */}
+                <div className="space-y-2">
+                  {securitySettings.activeSessions.map(session => (
+                    <div key={session.id} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            session.isCurrent ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"
+                          }`}>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{session.device}</p>
+                              {session.isCurrent && (
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Current</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-[var(--muted-foreground)]">
+                              {session.browser} • {session.os}
+                            </p>
+                            <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                              {session.location} • {session.ip}
+                            </p>
+                            <p className="text-xs text-[var(--muted-foreground)]">
+                              Last active: {new Date(session.lastActive).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        {!session.isCurrent && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleTerminateSession(session.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            Terminate
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button 
+                    variant="outline" 
+                    onClick={handleTerminateAllOtherSessions}
+                    className="w-full"
+                  >
+                    Terminate All Other Sessions
                   </Button>
                 </div>
               </div>
+            </div>
 
-              {/* Sessions */}
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Active Sessions</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      1 active session
+            {/* Login Monitoring Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Login Activity
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                <div className="space-y-2">
+                  {securitySettings.loginAttempts.slice(0, 5).map(attempt => (
+                    <div key={attempt.id} className="p-3 border rounded-lg flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          attempt.success ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                        }`}>
+                          {attempt.success ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {attempt.success ? "Successful login" : "Failed login attempt"}
+                          </p>
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {attempt.device} • {attempt.method}
+                          </p>
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {attempt.location} • {attempt.ip}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        {new Date(attempt.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+
+                  {securitySettings.loginAttempts.length === 0 && (
+                    <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                      No login activity recorded
                     </p>
-                  </div>
-                  <Button variant="outline" size="sm">View All</Button>
+                  )}
                 </div>
               </div>
+            </div>
 
-              {/* Login History */}
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Login History</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      View your recent login activity
-                    </p>
+            {/* Account Recovery Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Account Recovery
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                {/* Security Questions */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Security Questions</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        {securitySettings.securityQuestionsSet ? "Configured" : "Not configured"}
+                      </p>
+                    </div>
+                    <Button 
+                      variant={securitySettings.securityQuestionsSet ? "outline" : "default"} 
+                      size="sm"
+                      onClick={handleSetupSecurityQuestions}
+                    >
+                      {securitySettings.securityQuestionsSet ? "Edit" : "Setup"}
+                    </Button>
                   </div>
-                  <Button variant="outline" size="sm">View</Button>
+                </div>
+
+                {/* Recovery Email */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Recovery Email</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        {securitySettings.recoveryEmailSet ? "Configured" : "Not configured"}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleUpdateRecoveryInfo("email")}
+                    >
+                      {securitySettings.recoveryEmailSet ? "Change" : "Add"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Recovery Phone */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Recovery Phone</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        {securitySettings.recoveryPhoneSet ? "Configured" : "Not configured"}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleUpdateRecoveryInfo("phone")}
+                    >
+                      {securitySettings.recoveryPhoneSet ? "Change" : "Add"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
