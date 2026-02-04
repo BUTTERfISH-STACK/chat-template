@@ -11,10 +11,15 @@
     "otp:start": "OTP_PORT=3001 node server.js"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@prisma/client": "^7.3.0",
     "@radix-ui/react-slot": "^1.1.2",
     "@radix-ui/themes": "^3.3.0",
     "@tailwindcss/postcss": "^4.1.18",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@whiskeysockets/baileys": "^6.7.2",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "crypto": "^1.0.1",
@@ -24,13 +29,15 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.487.0",
     "next": "^16.1.6",
-    "qrcode": "^1.5.3",
     "pino": "^8.17.0",
+    "qrcode": "^1.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.71.1",
     "redis": "^4.6.12",
     "speakeasy": "^2.0.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^20",
