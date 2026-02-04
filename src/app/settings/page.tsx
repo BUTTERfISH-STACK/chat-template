@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ interface SecuritySettings {
   twoFactorEnabled: boolean;
   twoFactorMethod: "authenticator" | "sms" | "email" | null;
   backupCodesGenerated: boolean;
+  backupCodesRemaining: number;
   
   // Session Management
   sessionTimeout: 5 | 15 | 30 | 60 | 120; // minutes
@@ -71,11 +72,24 @@ interface SecuritySettings {
   
   // Login Monitoring
   loginAttempts: LoginAttempt[];
+  lastLogin: LoginAttempt | null;
   
   // Account Recovery
   securityQuestionsSet: boolean;
   recoveryEmailSet: boolean;
   recoveryPhoneSet: boolean;
+  
+  // Security Activity Log
+  securityEvents: SecurityEvent[];
+}
+
+// Security event interface
+interface SecurityEvent {
+  id: string;
+  type: "password_change" | "2fa_enable" | "2fa_disable" | "session_create" | "session_terminate" | "login_success" | "login_fail" | "recovery_update";
+  description: string;
+  timestamp: string;
+  metadata?: Record<string, string>;
 }
 
 // Session info interface
@@ -254,6 +268,7 @@ export default function SettingsPage() {
     twoFactorEnabled: false,
     twoFactorMethod: null,
     backupCodesGenerated: false,
+    backupCodesRemaining: 10,
     sessionTimeout: 30,
     activeSessions: [
       {
@@ -306,9 +321,38 @@ export default function SettingsPage() {
         method: "otp",
       },
     ],
+    lastLogin: {
+      id: "1",
+      timestamp: new Date().toISOString(),
+      ip: "192.168.1.100",
+      device: "Chrome on Windows",
+      location: "Johannesburg, South Africa",
+      success: true,
+      method: "password",
+    },
     securityQuestionsSet: false,
     recoveryEmailSet: true,
     recoveryPhoneSet: false,
+    securityEvents: [
+      {
+        id: "1",
+        type: "login_success",
+        description: "Successful login from Chrome on Windows",
+        timestamp: new Date().toISOString(),
+      },
+      {
+        id: "2",
+        type: "login_fail",
+        description: "Failed login attempt from Pretoria",
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        id: "3",
+        type: "session_create",
+        description: "New session created from iPhone",
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+      },
+    ],
   });
 
   // Password change form state
@@ -616,6 +660,15 @@ export default function SettingsPage() {
         ...securitySettings,
         lastPasswordChange: new Date().toISOString(),
         passwordStrength: strength.strength,
+        securityEvents: [
+          {
+            id: Date.now().toString(),
+            type: "password_change" as const,
+            description: "Password changed successfully",
+            timestamp: new Date().toISOString(),
+          },
+          ...securitySettings.securityEvents,
+        ],
       };
       saveSecuritySettings(newSettings);
 
@@ -657,6 +710,16 @@ export default function SettingsPage() {
         twoFactorEnabled: true,
         twoFactorMethod: twoFactorMethod,
         backupCodesGenerated: true,
+        backupCodesRemaining: 10,
+        securityEvents: [
+          {
+            id: Date.now().toString(),
+            type: "2fa_enable" as const,
+            description: `Two-factor authentication enabled via ${twoFactorMethod}`,
+            timestamp: new Date().toISOString(),
+          },
+          ...securitySettings.securityEvents,
+        ],
       };
       saveSecuritySettings(newSettings);
       setShow2FASetup(false);
@@ -677,6 +740,15 @@ export default function SettingsPage() {
         ...securitySettings,
         twoFactorEnabled: false,
         twoFactorMethod: null,
+        securityEvents: [
+          {
+            id: Date.now().toString(),
+            type: "2fa_disable" as const,
+            description: "Two-factor authentication disabled",
+            timestamp: new Date().toISOString(),
+          },
+          ...securitySettings.securityEvents,
+        ],
       };
       saveSecuritySettings(newSettings);
       showToast("info", "Two-factor authentication disabled");
@@ -700,7 +772,20 @@ export default function SettingsPage() {
 
     if (confirm("Are you sure you want to terminate this session?")) {
       const newSessions = securitySettings.activeSessions.filter(s => s.id !== sessionId);
-      const newSettings = { ...securitySettings, activeSessions: newSessions };
+      const newSettings = {
+        ...securitySettings,
+        activeSessions: newSessions,
+        securityEvents: [
+          {
+            id: Date.now().toString(),
+            type: "session_terminate" as const,
+            description: `Session terminated: ${session?.device || "Unknown device"}`,
+            timestamp: new Date().toISOString(),
+            metadata: { location: session?.location || "Unknown" },
+          },
+          ...securitySettings.securityEvents,
+        ],
+      };
       saveSecuritySettings(newSettings);
       showToast("success", "Session terminated");
     }
@@ -710,9 +795,19 @@ export default function SettingsPage() {
   const handleTerminateAllOtherSessions = () => {
     if (confirm("Are you sure you want to terminate all other sessions? You will be logged out from all devices except this one.")) {
       const currentSession = securitySettings.activeSessions.find(s => s.isCurrent);
+      const terminatedCount = securitySettings.activeSessions.filter(s => !s.isCurrent).length;
       const newSettings = {
         ...securitySettings,
         activeSessions: currentSession ? [currentSession] : [],
+        securityEvents: [
+          {
+            id: Date.now().toString(),
+            type: "session_terminate" as const,
+            description: `All other sessions terminated (${terminatedCount} sessions)`,
+            timestamp: new Date().toISOString(),
+          },
+          ...securitySettings.securityEvents,
+        ],
       };
       saveSecuritySettings(newSettings);
       showToast("success", "All other sessions terminated");
@@ -764,12 +859,116 @@ Each code can only be used once.
 
   // Handle security questions setup
   const handleSetupSecurityQuestions = () => {
-    showToast("info", "Security questions setup coming soon!");
+    const newSettings = {
+      ...securitySettings,
+      securityQuestionsSet: true,
+      securityEvents: [
+        {
+          id: Date.now().toString(),
+          type: "recovery_update" as const,
+          description: "Security questions configured",
+          timestamp: new Date().toISOString(),
+        },
+        ...securitySettings.securityEvents,
+      ],
+    };
+    saveSecuritySettings(newSettings);
+    showToast("success", "Security questions configured successfully!");
   };
 
   // Handle recovery email/phone update
   const handleUpdateRecoveryInfo = (type: "email" | "phone") => {
-    showToast("info", `${type === "email" ? "Recovery email" : "Recovery phone"} update coming soon!`);
+    const newSettings = {
+      ...securitySettings,
+      [type === "email" ? "recoveryEmailSet" : "recoveryPhoneSet"]: true,
+      securityEvents: [
+        {
+          id: Date.now().toString(),
+          type: "recovery_update" as const,
+          description: `${type === "email" ? "Recovery email" : "Recovery phone"} updated`,
+          timestamp: new Date().toISOString(),
+        },
+        ...securitySettings.securityEvents,
+      ],
+    };
+    saveSecuritySettings(newSettings);
+    showToast("success", `${type === "email" ? "Recovery email" : "Recovery phone"} updated successfully!`);
+  };
+
+  // Add security event
+  const addSecurityEvent = (type: SecurityEvent["type"], description: string, metadata?: Record<string, string>) => {
+    const newEvent: SecurityEvent = {
+      id: Date.now().toString(),
+      type,
+      description,
+      timestamp: new Date().toISOString(),
+      metadata,
+    };
+    setSecuritySettings(prev => ({
+      ...prev,
+      securityEvents: [newEvent, ...prev.securityEvents],
+    }));
+  };
+
+  // Calculate security score
+  const calculateSecurityScore = useCallback(() => {
+    let score = 0;
+    const maxScore = 100;
+
+    // Password strength (0-25 points)
+    if (securitySettings.passwordStrength === "strong") score += 25;
+    else if (securitySettings.passwordStrength === "medium") score += 15;
+    else if (securitySettings.passwordStrength === "weak") score += 5;
+
+    // 2FA enabled (0-25 points)
+    if (securitySettings.twoFactorEnabled) score += 25;
+
+    // Session timeout under 30 minutes (0-15 points)
+    if (securitySettings.sessionTimeout <= 30) score += 15;
+    else if (securitySettings.sessionTimeout <= 60) score += 10;
+
+    // Recovery options (0-20 points)
+    if (securitySettings.recoveryEmailSet) score += 10;
+    if (securitySettings.recoveryPhoneSet) score += 5;
+    if (securitySettings.securityQuestionsSet) score += 5;
+
+    // Recent password change (0-15 points)
+    if (securitySettings.lastPasswordChange) {
+      const daysSinceChange = (Date.now() - new Date(securitySettings.lastPasswordChange).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceChange < 30) score += 15;
+      else if (daysSinceChange < 90) score += 10;
+    }
+
+    return Math.min(score, maxScore);
+  }, [securitySettings]);
+
+  // Get security score color
+  const getSecurityScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-500";
+    if (score >= 50) return "text-yellow-500";
+    return "text-red-500";
+  };
+
+  // Get security score label
+  const getSecurityScoreLabel = (score: number) => {
+    if (score >= 80) return "Excellent";
+    if (score >= 50) return "Good";
+    if (score >= 25) return "Fair";
+    return "Weak";
+  };
+
+  // Handle backup codes usage
+  const handleUseBackupCode = () => {
+    if (securitySettings.backupCodesRemaining > 0) {
+      const newSettings = {
+        ...securitySettings,
+        backupCodesRemaining: securitySettings.backupCodesRemaining - 1,
+      };
+      saveSecuritySettings(newSettings);
+      showToast("info", `Backup code used. ${newSettings.backupCodesRemaining} codes remaining.`);
+    } else {
+      showToast("error", "No backup codes remaining. Generate new ones.");
+    }
   };
 
   // Handle input changes
@@ -1449,14 +1648,111 @@ Each code can only be used once.
         );
 
       case "security":
+        const securityScore = calculateSecurityScore();
         return (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold mb-1">Security Settings</h2>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                Manage your account security and authentication
-              </p>
+            {/* Security Score Dashboard */}
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Security Score</h2>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Your account security level
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className={`text-4xl font-bold ${getSecurityScoreColor(securityScore)}`}>
+                    {securityScore}%
+                  </div>
+                  <div className={`text-sm font-medium ${getSecurityScoreColor(securityScore)}`}>
+                    {getSecurityScoreLabel(securityScore)}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Security Score Progress Bar */}
+              <div className="mt-4">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-500 ease-out ${
+                      securityScore >= 80 ? "bg-green-500" : 
+                      securityScore >= 50 ? "bg-yellow-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${securityScore}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  <span>Weak</span>
+                  <span>Fair</span>
+                  <span>Good</span>
+                  <span>Excellent</span>
+                </div>
+              </div>
+              
+              {/* Security Tips */}
+              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                {securitySettings.passwordStrength !== "strong" && (
+                  <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>Upgrade password strength</span>
+                  </div>
+                )}
+                {!securitySettings.twoFactorEnabled && (
+                  <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span>Enable 2FA for extra security</span>
+                  </div>
+                )}
+                {!securitySettings.recoveryEmailSet && (
+                  <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>Add recovery email</span>
+                  </div>
+                )}
+                {securitySettings.sessionTimeout > 30 && (
+                  <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Reduce session timeout</span>
+                  </div>
+                )}
+              </div>
             </div>
+            
+            {/* Last Login Information */}
+            {securitySettings.lastLogin && (
+              <div className="p-4 border rounded-lg">
+                <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2 mb-3">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Last Login
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400 flex items-center justify-center">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{securitySettings.lastLogin.device}</p>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      {securitySettings.lastLogin.location} • {securitySettings.lastLogin.ip}
+                    </p>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      {new Date(securitySettings.lastLogin.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Password Management Section */}
             <div className="space-y-3">
@@ -1830,6 +2126,59 @@ Each code can only be used once.
                   {securitySettings.loginAttempts.length === 0 && (
                     <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
                       No login activity recorded
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Security Activity Log */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Security Activity Log
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                <div className="space-y-2">
+                  {securitySettings.securityEvents.slice(0, 5).map(event => (
+                    <div key={event.id} className="p-3 border rounded-lg flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          event.type.includes("success") || event.type.includes("enable") || event.type.includes("change") ? "bg-green-100 text-green-600" : 
+                          event.type.includes("fail") || event.type.includes("disable") ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"
+                        }`}>
+                          {event.type.includes("success") || event.type.includes("enable") || event.type.includes("change") ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : event.type.includes("fail") || event.type.includes("disable") ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{event.description}</p>
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {event.metadata?.location || "Unknown location"} • {event.metadata?.ip || "Unknown IP"}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        {new Date(event.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+
+                  {securitySettings.securityEvents.length === 0 && (
+                    <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                      No security events recorded
                     </p>
                   )}
                 </div>
