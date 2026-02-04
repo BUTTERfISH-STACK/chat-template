@@ -154,7 +154,7 @@ export default function HomePage() {
       <TopNavBar />
 
       {/* Main Content */}
-      <main className="ml-0 md:ml-64 pt-16 md:pt-0 min-h-screen">
+      <main className="md:ml-64 min-h-screen">
         <div className="max-w-2xl mx-auto">
           {/* Stories Section - Horizontal Scroll */}
           <section className="border-b border-[var(--border)] py-5 px-4 md:px-6">
@@ -381,7 +381,7 @@ export default function HomePage() {
       </main>
 
       {/* Mobile bottom spacer */}
-      <div className="h-20 md:hidden" />
+      <div className="h-16 md:hidden" />
     </div>
   );
 }
