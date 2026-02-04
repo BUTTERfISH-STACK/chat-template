@@ -23,6 +23,37 @@ interface UserPreferences {
   blockedUsers: string[];
 }
 
+// Privacy settings interface
+interface PrivacySettings {
+  // Activity & Presence
+  activityStatus: boolean;
+  showLastSeen: boolean;
+  
+  // Read Receipts
+  readReceipts: boolean;
+  
+  // Profile Visibility
+  profileVisibility: "public" | "followers" | "private";
+  showOnlineStatus: boolean;
+  showBio: boolean;
+  showEmail: boolean;
+  
+  // Message Privacy
+  allowDirectMessages: "everyone" | "followers" | "none";
+  allowGroupInvites: boolean;
+  
+  // Consent Controls
+  marketingEmails: boolean;
+  pushNotifications: boolean;
+  analyticsCookies: boolean;
+  personalizedAds: boolean;
+  
+  // Data Management
+  blockedUsers: string[];
+  dataExportRequested: boolean;
+  dataDeletionRequested: boolean;
+}
+
 // Form validation types
 interface ProfileFormData {
   name: string;
@@ -149,6 +180,26 @@ export default function SettingsPage() {
     blockedUsers: [],
   });
 
+  // Privacy settings state
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
+    activityStatus: true,
+    showLastSeen: true,
+    readReceipts: true,
+    profileVisibility: "public",
+    showOnlineStatus: true,
+    showBio: true,
+    showEmail: false,
+    allowDirectMessages: "everyone",
+    allowGroupInvites: true,
+    marketingEmails: false,
+    pushNotifications: true,
+    analyticsCookies: false,
+    personalizedAds: false,
+    blockedUsers: [],
+    dataExportRequested: false,
+    dataDeletionRequested: false,
+  });
+
   // Initialize form data from user
   useEffect(() => {
     if (user) {
@@ -172,14 +223,34 @@ export default function SettingsPage() {
         console.error("Failed to parse preferences:", e);
       }
     }
-  }, []);
+  }, [isMounted]);
+
+  // Load privacy settings from localStorage on mount (client-side only)
+  useEffect(() => {
+    if (!isMounted) return;
+    const savedPrivacy = localStorage.getItem("privacySettings");
+    if (savedPrivacy) {
+      try {
+        setPrivacySettings(JSON.parse(savedPrivacy));
+      } catch (e) {
+        console.error("Failed to parse privacy settings:", e);
+      }
+    }
+  }, [isMounted]);
 
   // Save preferences to localStorage
   const savePreferences = useCallback((newPrefs: UserPreferences) => {
     if (!isMounted) return;
     localStorage.setItem("userPreferences", JSON.stringify(newPrefs));
     setPreferences(newPrefs);
-  }, []);
+  }, [isMounted]);
+
+  // Save privacy settings to localStorage
+  const savePrivacySettings = useCallback((newSettings: PrivacySettings) => {
+    if (!isMounted) return;
+    localStorage.setItem("privacySettings", JSON.stringify(newSettings));
+    setPrivacySettings(newSettings);
+  }, [isMounted]);
 
   // Validation functions
   const validateEmail = (email: string): boolean => {
@@ -267,6 +338,78 @@ export default function SettingsPage() {
     const newPrefs = { ...preferences, [key]: value };
     savePreferences(newPrefs);
     showToast("success", `${key.replace(/([A-Z])/g, " $1").trim()} preference updated`);
+  };
+
+  // Handle privacy setting changes
+  const handlePrivacyChange = (key: keyof PrivacySettings, value: boolean | string) => {
+    const newSettings = { ...privacySettings, [key]: value };
+    savePrivacySettings(newSettings);
+    
+    // Format the setting name for display
+    const formattedKey = key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
+    showToast("success", `${formattedKey} ${typeof value === "boolean" ? (value ? "enabled" : "disabled") : "updated"}`);
+  };
+
+  // Handle data export request
+  const handleDataExport = async () => {
+    setIsSaving(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Create a mock data export
+      const userData = {
+        profile: user,
+        preferences: preferences,
+        privacySettings: {
+          ...privacySettings,
+          blockedUsers: undefined, // Don't export blocked list for privacy
+        },
+        exportedAt: new Date().toISOString(),
+      };
+      
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(userData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vellon-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast("success", "Your data has been exported successfully!");
+    } catch (error) {
+      console.error("Failed to export data:", error);
+      showToast("error", "Failed to export data. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle data deletion request
+  const handleDataDeletion = () => {
+    if (confirm(
+      "Are you sure you want to delete your data? " +
+      "This action cannot be undone and will permanently remove all your information."
+    )) {
+      if (confirm("This is your last chance to cancel. Do you really want to proceed?")) {
+        setPrivacySettings(prev => ({ ...prev, dataDeletionRequested: true }));
+        savePrivacySettings({ ...privacySettings, dataDeletionRequested: true });
+        showToast("info", "Data deletion request submitted. You will be logged out shortly.");
+        
+        // Log out after a short delay
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+      }
+    }
+  };
+
+  // Handle blocked user management
+  const handleManageBlocked = () => {
+    showToast("info", "Blocked users management coming soon!");
   };
 
   // Handle input changes
@@ -474,97 +617,473 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="space-y-4">
-              {/* Activity Status */}
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Activity Status</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      Show when you're active
-                    </p>
-                  </div>
-                  <div
-                    className={cn(
-                      "w-12 h-6 rounded-full transition-colors cursor-pointer",
-                      preferences.activityStatus ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
-                    )}
-                    onClick={() => handlePreferenceChange("activityStatus", !preferences.activityStatus)}
-                  >
+            {/* Activity & Presence Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Activity & Presence
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                {/* Activity Status */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Activity Status</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Show when you're active
+                      </p>
+                    </div>
                     <div
                       className={cn(
-                        "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
-                        preferences.activityStatus ? "translate-x-6" : "translate-x-0.5"
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.activityStatus ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
                       )}
-                    />
+                      onClick={() => handlePrivacyChange("activityStatus", !privacySettings.activityStatus)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.activityStatus ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Show Last Seen */}
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Show Last Seen</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      Let others see when you were last active
-                    </p>
-                  </div>
-                  <div
-                    className={cn(
-                      "w-12 h-6 rounded-full transition-colors cursor-pointer",
-                      preferences.showLastSeen ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
-                    )}
-                    onClick={() => handlePreferenceChange("showLastSeen", !preferences.showLastSeen)}
-                  >
+                {/* Show Last Seen */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Show Last Seen</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Let others see when you were last active
+                      </p>
+                    </div>
                     <div
                       className={cn(
-                        "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
-                        preferences.showLastSeen ? "translate-x-6" : "translate-x-0.5"
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.showLastSeen ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
                       )}
-                    />
+                      onClick={() => handlePrivacyChange("showLastSeen", !privacySettings.showLastSeen)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.showLastSeen ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Read Receipts */}
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Read Receipts</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      Send read receipts when messages are read
-                    </p>
-                  </div>
-                  <div
-                    className={cn(
-                      "w-12 h-6 rounded-full transition-colors cursor-pointer",
-                      preferences.messageReadReceipts ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
-                    )}
-                    onClick={() => handlePreferenceChange("messageReadReceipts", !preferences.messageReadReceipts)}
-                  >
+                {/* Show Online Status */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Show Online Status</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Display your online status to others
+                      </p>
+                    </div>
                     <div
                       className={cn(
-                        "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
-                        preferences.messageReadReceipts ? "translate-x-6" : "translate-x-0.5"
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.showOnlineStatus ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
                       )}
-                    />
+                      onClick={() => handlePrivacyChange("showOnlineStatus", !privacySettings.showOnlineStatus)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.showOnlineStatus ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Blocked Users */}
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Blocked Users</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      {preferences.blockedUsers.length} users blocked
-                    </p>
+            {/* Read Receipts Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Read Receipts
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Send Read Receipts</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Send read receipts when messages are read
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.readReceipts ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
+                      )}
+                      onClick={() => handlePrivacyChange("readReceipts", !privacySettings.readReceipts)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.readReceipts ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
                   </div>
-                  <Button variant="outline" size="sm">Manage</Button>
                 </div>
               </div>
+            </div>
+
+            {/* Profile Visibility Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Profile Visibility
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                {/* Profile Visibility */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Profile Visibility</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Who can see your profile
+                      </p>
+                    </div>
+                    <select
+                      value={privacySettings.profileVisibility}
+                      onChange={(e) => handlePrivacyChange("profileVisibility", e.target.value)}
+                      className="px-3 py-2 border rounded-lg bg-[var(--background)] text-sm"
+                    >
+                      <option value="public">Everyone</option>
+                      <option value="followers">Followers Only</option>
+                      <option value="private">Only Me</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Show Bio */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Show Bio</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Display your bio on your profile
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.showBio ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
+                      )}
+                      onClick={() => handlePrivacyChange("showBio", !privacySettings.showBio)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.showBio ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Show Email */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Show Email</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Display your email on your profile
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.showEmail ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
+                      )}
+                      onClick={() => handlePrivacyChange("showEmail", !privacySettings.showEmail)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.showEmail ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Message Privacy Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Message Privacy
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                {/* Allow Direct Messages */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Allow Direct Messages</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Who can send you direct messages
+                      </p>
+                    </div>
+                    <select
+                      value={privacySettings.allowDirectMessages}
+                      onChange={(e) => handlePrivacyChange("allowDirectMessages", e.target.value)}
+                      className="px-3 py-2 border rounded-lg bg-[var(--background)] text-sm"
+                    >
+                      <option value="everyone">Everyone</option>
+                      <option value="followers">Followers Only</option>
+                      <option value="none">No One</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Allow Group Invites */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Allow Group Invites</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Let others add you to groups
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.allowGroupInvites ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
+                      )}
+                      onClick={() => handlePrivacyChange("allowGroupInvites", !privacySettings.allowGroupInvites)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.allowGroupInvites ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Consent & Communications Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Consent & Communications
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                {/* Marketing Emails */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Marketing Emails</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Receive emails about new features and promotions
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.marketingEmails ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
+                      )}
+                      onClick={() => handlePrivacyChange("marketingEmails", !privacySettings.marketingEmails)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.marketingEmails ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Push Notifications */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Push Notifications</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Receive push notifications on your device
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.pushNotifications ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
+                      )}
+                      onClick={() => handlePrivacyChange("pushNotifications", !privacySettings.pushNotifications)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.pushNotifications ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Analytics Cookies */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Analytics Cookies</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Help us improve by allowing anonymous analytics
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.analyticsCookies ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
+                      )}
+                      onClick={() => handlePrivacyChange("analyticsCookies", !privacySettings.analyticsCookies)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.analyticsCookies ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Personalized Ads */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Personalized Ads</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Show ads based on your interests
+                      </p>
+                    </div>
+                    <div
+                      className={cn(
+                        "w-12 h-6 rounded-full transition-colors cursor-pointer",
+                        privacySettings.personalizedAds ? "bg-[var(--primary)]" : "bg-gray-300 dark:bg-gray-600"
+                      )}
+                      onClick={() => handlePrivacyChange("personalizedAds", !privacySettings.personalizedAds)}
+                    >
+                      <div
+                        className={cn(
+                          "w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5",
+                          privacySettings.personalizedAds ? "translate-x-6" : "translate-x-0.5"
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Blocked Users Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+                Blocked Users
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Blocked Users</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        {privacySettings.blockedUsers.length} users blocked
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleManageBlocked}>
+                      Manage
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Data Management Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-[var(--foreground)] flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+                Data Management
+              </h3>
+              <div className="space-y-3 pl-6 border-l-2 border-[var(--border)]">
+                {/* Export Data */}
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Export Your Data</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Download a copy of all your data
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleDataExport}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Exporting..." : "Export"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Delete Data */}
+                <div className="p-4 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-red-600">Delete Your Data</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">
+                        Permanently delete all your data
+                      </p>
+                    </div>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={handleDataDeletion}
+                      disabled={privacySettings.dataDeletionRequested}
+                    >
+                      {privacySettings.dataDeletionRequested ? "Requested" : "Delete"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Privacy Policy Link */}
+            <div className="pt-4 border-t">
+              <Button 
+                variant="link" 
+                className="text-[var(--primary)]"
+                onClick={() => setActiveTab("more")}
+              >
+                View our Privacy Policy
+              </Button>
             </div>
           </div>
         );
