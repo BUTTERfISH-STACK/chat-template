@@ -159,44 +159,190 @@ export default function HomePage() {
           {/* Stories Section - Horizontal Scroll */}
           <section className="border-b border-[var(--border)] py-5 px-4 md:px-6">
             <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide">
-              {stories.map((story, index) => (
+              <div
+                className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: "0s" }}
+              >
                 <div
-                  key={story.id}
-                  className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
-                  style={{ animationDelay: `${index * 0.05}s` }}
+                  className="w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)]"
                 >
                   <div
-                    className={cn(
-                      "w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105",
-                      story.isViewed 
-                        ? "bg-[var(--border)]" 
-                        : "bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)]"
-                    )}
+                    className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                    style={{ background: "var(--secondary)" }}
                   >
-                    <div 
-                      className="w-full h-full rounded-full bg-[var(--card)] p-1"
-                      style={{ 
-                        background: story.isOwn 
-                          ? 'var(--secondary)' 
-                          : 'var(--card)'
-                      }}
+                    <div
+                      className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
+                      style={{ background: "var(--secondary)", fontSize: "1.35rem" }}
                     >
-                      <div 
-                        className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
-                        style={{ 
-                          background: 'var(--secondary)',
-                          fontSize: '1.35rem'
-                        }}
-                      >
-                        {story.username.charAt(0).toUpperCase()}
-                      </div>
+                      Y
                     </div>
                   </div>
-                  <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
-                    {story.isOwn ? "Your story" : story.username}
-                  </p>
                 </div>
-              ))}
+                <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
+                  Your story
+                </p>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: "0.05s" }}
+              >
+                <div
+                  className="w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-[var(--border)]"
+                >
+                  <div
+                    className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                    style={{ background: "var(--card)" }}
+                  >
+                    <div
+                      className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
+                      style={{ background: "var(--secondary)", fontSize: "1.35rem" }}
+                    >
+                      S
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
+                  sarah_j
+                </p>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: "0.1s" }}
+              >
+                <div
+                  className="w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)]"
+                >
+                  <div
+                    className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                    style={{ background: "var(--card)" }}
+                  >
+                    <div
+                      className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
+                      style={{ background: "var(--secondary)", fontSize: "1.35rem" }}
+                    >
+                      M
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
+                  mike_t
+                </p>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: "0.15s" }}
+              >
+                <div
+                  className="w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-[var(--border)]"
+                >
+                  <div
+                    className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                    style={{ background: "var(--card)" }}
+                  >
+                    <div
+                      className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
+                      style={{ background: "var(--secondary)", fontSize: "1.35rem" }}
+                    >
+                      E
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
+                  emily_d
+                </p>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: "0.2s" }}
+              >
+                <div
+                  className="w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)]"
+                >
+                  <div
+                    className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                    style={{ background: "var(--card)" }}
+                  >
+                    <div
+                      className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
+                      style={{ background: "var(--secondary)", fontSize: "1.35rem" }}
+                    >
+                      D
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
+                  david_w
+                </p>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: "0.25s" }}
+              >
+                <div
+                  className="w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)]"
+                >
+                  <div
+                    className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                    style={{ background: "var(--card)" }}
+                  >
+                    <div
+                      className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
+                      style={{ background: "var(--secondary)", fontSize: "1.35rem" }}
+                    >
+                      L
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
+                  lisa_m
+                </p>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: "0.3s" }}
+              >
+                <div
+                  className="w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-[var(--border)]"
+                >
+                  <div
+                    className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                    style={{ background: "var(--card)" }}
+                  >
+                    <div
+                      className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
+                      style={{ background: "var(--secondary)", fontSize: "1.35rem" }}
+                    >
+                      J
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
+                  james_k
+                </p>
+              </div>
+              <div
+                className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                style={{ animationDelay: "0.35s" }}
+              >
+                <div
+                  className="w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)]"
+                >
+                  <div
+                    className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                    style={{ background: "var(--card)" }}
+                  >
+                    <div
+                      className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
+                      style={{ background: "var(--secondary)", fontSize: "1.35rem" }}
+                    >
+                      A
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
+                  anna_p
+                </p>
+              </div>
             </div>
           </section>
 
