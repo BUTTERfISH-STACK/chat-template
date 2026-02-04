@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+interface SignupData {
+  phoneNumber: string;
+  username: string;
+  fullName: string;
+  email: string;
+}
+
 export default function OTPPage() {
   const router = useRouter();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -13,16 +20,26 @@ export default function OTPPage() {
   const [resendTimer, setResendTimer] = useState(60);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isSignup, setIsSignup] = useState(false);
+  const [signupData, setSignupData] = useState<SignupData | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     // Get phone number and signup flag from session storage
     const storedPhone = sessionStorage.getItem("phoneNumber");
     const signupFlag = sessionStorage.getItem("isSignup");
+    const storedSignupData = sessionStorage.getItem("signupData");
     
     if (storedPhone) {
       setPhoneNumber(storedPhone);
       setIsSignup(signupFlag === "true");
+      
+      if (storedSignupData) {
+        try {
+          setSignupData(JSON.parse(storedSignupData));
+        } catch (e) {
+          console.error("Failed to parse signup data");
+        }
+      }
     } else {
       // Redirect to login if no phone number
       router.push("/login");
@@ -72,26 +89,42 @@ export default function OTPPage() {
     // Verify OTP with server
     try {
       const endpoint = isSignup ? "/api/auth/verify-signup-otp" : "/api/auth/verify-otp";
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      // Pass signup data in header for signup flow
+      if (isSignup && signupData) {
+        headers["x-signup-data"] = JSON.stringify(signupData);
+      }
+
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           phoneNumber,
           otpCode,
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         sessionStorage.setItem("authToken", data.token);
         sessionStorage.setItem("userPhone", phoneNumber);
-        // Clear signup flag
+        
+        // Store user data if available
+        if (data.user) {
+          sessionStorage.setItem("userData", JSON.stringify(data.user));
+        }
+        
+        // Clear signup-related storage
         sessionStorage.removeItem("isSignup");
+        sessionStorage.removeItem("signupData");
+        
         router.push("/");
       } else {
-        setError("Invalid code. Please try again.");
+        setError(data.error || "Invalid code. Please try again.");
         setOtp(["", "", "", "", "", ""]);
       }
     } catch (error) {
@@ -123,6 +156,12 @@ export default function OTPPage() {
     }
   };
 
+  const handleEditPhone = () => {
+    sessionStorage.removeItem("isSignup");
+    sessionStorage.removeItem("signupData");
+    router.push(isSignup ? "/signup" : "/login");
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
       {/* Logo */}
@@ -142,6 +181,12 @@ export default function OTPPage() {
         <p className="text-muted-foreground">
           We've sent a code to <span className="font-semibold">{phoneNumber}</span>
         </p>
+        <button
+          onClick={handleEditPhone}
+          className="text-primary text-sm hover:underline mt-1"
+        >
+          Edit phone number
+        </button>
       </div>
 
       {/* OTP Form */}
@@ -204,10 +249,7 @@ export default function OTPPage() {
       {/* Back Link */}
       <div className="mt-8">
         <button 
-          onClick={() => {
-            sessionStorage.removeItem("isSignup");
-            router.push("/login");
-          }}
+          onClick={handleEditPhone}
           className="text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

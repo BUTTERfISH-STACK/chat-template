@@ -3,18 +3,15 @@ import crypto from "crypto";
 
 // Simple JWT-like token generation (for demo purposes)
 // In production, use proper JWT library like jsonwebtoken
-function generateToken(phoneNumber: string): string {
-  const payload = {
-    phoneNumber,
-    timestamp: Date.now(),
-    isNewUser: true,
-  };
-  const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64");
+function generateToken(payload: object): string {
+  const header = { alg: "HS256", typ: "JWT" };
+  const base64Header = Buffer.from(JSON.stringify(header)).toString("base64url");
+  const base64Payload = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const signature = crypto
     .createHmac("sha256", process.env.JWT_SECRET || "your-secret-key")
-    .update(base64Payload)
+    .update(`${base64Header}.${base64Payload}`)
     .digest("hex");
-  return `${base64Payload}.${signature}`;
+  return `${base64Header}.${base64Payload}.${signature}`;
 }
 
 export async function POST(request: Request) {
@@ -38,16 +35,52 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get signup data from session storage
+    const signupDataStr = request.headers.get("x-signup-data");
+    let signupData = null;
+    
+    if (signupDataStr) {
+      try {
+        signupData = JSON.parse(signupDataStr);
+      } catch (e) {
+        console.error("Failed to parse signup data");
+      }
+    }
+
     // In production, create new user record in database here
-    // const newUser = await db.user.create({ data: { phoneNumber } });
+    // Example with Prisma:
+    // const newUser = await db.user.create({
+    //   data: {
+    //     phoneNumber: signupData?.phoneNumber || phoneNumber,
+    //     username: signupData?.username.toLowerCase(),
+    //     name: signupData?.fullName,
+    //     email: signupData?.email.toLowerCase(),
+    //     avatar: null,
+    //     bio: "",
+    //     createdAt: new Date(),
+    //   }
+    // });
 
     // Generate auth token
-    const token = generateToken(phoneNumber);
+    const token = generateToken({
+      phoneNumber: signupData?.phoneNumber || phoneNumber,
+      username: signupData?.username?.toLowerCase(),
+      name: signupData?.fullName,
+      email: signupData?.email?.toLowerCase(),
+      timestamp: Date.now(),
+      isNewUser: true,
+    });
 
     return NextResponse.json({
       success: true,
       token,
       message: "Account created successfully",
+      user: {
+        phoneNumber: signupData?.phoneNumber || phoneNumber,
+        username: signupData?.username,
+        name: signupData?.fullName,
+        email: signupData?.email,
+      },
     });
   } catch (error) {
     console.error("Error creating account:", error);

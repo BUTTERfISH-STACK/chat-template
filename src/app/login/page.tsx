@@ -116,15 +116,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm p-4 bg-card rounded-lg border border-border text-center mt-6">
         <p className="text-sm">
           Don't have an account?{" "}
-          <button 
-            onClick={() => {
-              sessionStorage.setItem("isSignup", "true");
-              router.push("/otp");
-            }}
-            className="text-primary font-semibold hover:underline"
-          >
+          <Link href="/signup" className="text-primary font-semibold hover:underline">
             Sign up
-          </button>
+          </Link>
         </p>
       </div>
 
