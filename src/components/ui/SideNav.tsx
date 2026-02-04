@@ -71,7 +71,7 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 h-screen w-64 bg-[var(--card)] border-r border-[var(--border)] flex flex-col z-40 transition-all duration-300",
+        "hidden md:flex fixed left-0 top-0 h-screen w-64 bg-[var(--card)] border-r border-[var(--border)] flex flex-col z-40 transition-all duration-300",
         className
       )}
     >

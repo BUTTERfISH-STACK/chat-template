@@ -63,7 +63,7 @@ export function Sidebar({ items = defaultNavItems, className, collapsed = false 
   return (
     <aside
       className={cn(
-        "flex flex-col bg-[var(--card)] border-r border-[var(--border)]",
+        "hidden md:flex flex-col bg-[var(--card)] border-r border-[var(--border)]",
         collapsed ? "w-16" : "w-64",
         className
       )}

@@ -567,3 +567,39 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Instagram-style Navigation */
+.ig-nav-item {
+  @apply p-2 rounded-lg transition-all duration-200;
+}
+
+.ig-nav-item-active {
+  @apply text-[var(--primary)];
+}
+
+.ig-nav-item-inactive {
+  @apply text-[var(--foreground)] hover:text-[var(--primary)];
+}
+
+.ig-search-bar {
+  @apply relative;
+}
+
+.ig-search-bar-icon {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)];
+}
+
+.ig-search-bar-input {
+  @apply w-full pl-10 pr-4 py-2 bg-[var(--background)] rounded-lg border border-[var(--border)] 
+         focus:outline-none focus:border-[var(--primary)] transition-all duration-200 
+         placeholder:text-[var(--muted-foreground)] text-sm;
+}
+
+.ig-create-button {
+  @apply w-8 h-8 rounded-full bg-transparent flex items-center justify-center 
+         border border-[var(--border)] group-hover:bg-[var(--secondary)] transition-colors;
+}
+
+.ig-avatar-small {
+  @apply w-6 h-6;
+}
