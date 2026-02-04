@@ -4,460 +4,566 @@
 
 @layer base {
   :root {
-    /* Instagram-inspired color palette */
-    --background: #ffffff;
-    --foreground: #262626;
+    /* Vellon Unique Color Palette - Warm & Distinct */
+    --background: #faf9f7;
+    --foreground: #1a1a1a;
     --card: #ffffff;
-    --card-foreground: #262626;
+    --card-foreground: #1a1a1a;
     --popover: #ffffff;
-    --popover-foreground: #262626;
-    --primary: #0095f6;
+    --popover-foreground: #1a1a1a;
+
+    /* Primary Brand Color - Warm Coral/Orange */
+    --primary: #e07a5f;
     --primary-foreground: #ffffff;
-    --secondary: #fafafa;
-    --secondary-foreground: #262626;
-    --muted: #fafafa;
-    --muted-foreground: #8e8e8e;
-    --accent: #0095f6;
-    --accent-foreground: #262626;
-    --destructive: #ed4956;
+    --primary-light: #f4a261;
+    --primary-dark: #c45a3f;
+
+    /* Secondary - Sage Green */
+    --secondary: #e8eddf;
+    --secondary-foreground: #2d3a2d;
+
+    /* Accent Colors */
+    --accent-gold: #f4d35e;
+    --accent-teal: #3d9a9b;
+    --accent-purple: #7c6a9a;
+    --accent-rose: #e5989b;
+    --accent-green: #6ab04c;
+
+    /* Muted */
+    --muted: #f0efeb;
+    --muted-foreground: #6b6b6b;
+
+    /* Status Colors */
+    --destructive: #c44536;
     --destructive-foreground: #ffffff;
-    --border: #dbdbdb;
-    --input: #dbdbdb;
-    --ring: #0095f6;
-    --radius: 8px;
-    
-    /* Instagram-specific colors */
-    --ig-blue: #0095f6;
-    --ig-red: #ed4956;
-    --ig-yellow: #ffcc00;
-    --ig-green: #00c853;
-    --ig-gray: #8e8e8e;
-    --ig-light-gray: #dbdbdb;
-    --ig-background: #fafafa;
-    --ig-link: #00376b;
+    --success: #6ab04c;
+    --warning: #f4d35e;
+    --info: #3d9a9b;
+
+    /* Borders & Inputs */
+    --border: #e5e5e5;
+    --input: #e5e5e5;
+    --ring: #e07a5f;
+
+    /* Border Radius - Less rounded than Instagram */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   }
 
   .dark {
-    --background: #000000;
-    --foreground: #fafafa;
-    --card: #000000;
-    --card-foreground: #fafafa;
-    --popover: #000000;
-    --popover-foreground: #fafafa;
-    --primary: #0095f6;
-    --primary-foreground: #000000;
-    --secondary: #1a1a1a;
-    --secondary-foreground: #fafafa;
-    --muted: #1a1a1a;
-    --muted-foreground: #8e8e8e;
-    --accent: #0095f6;
-    --accent-foreground: #fafafa;
-    --destructive: #ed4956;
-    --destructive-foreground: #fafafa;
-    --border: #262626;
-    --input: #262626;
-    --ring: #0095f6;
+    --background: #121212;
+    --foreground: #f5f5f5;
+    --card: #1e1e1e;
+    --card-foreground: #f5f5f5;
+    --popover: #1e1e1e;
+    --popover-foreground: #f5f5f5;
+
+    /* Dark mode adjustments */
+    --primary: #e07a5f;
+    --primary-foreground: #121212;
+    --primary-light: #f4a261;
+    --primary-dark: #c45a3f;
+
+    --secondary: #2a2a2a;
+    --secondary-foreground: #e8eddf;
+
+    --muted: #2a2a2a;
+    --muted-foreground: #a0a0a0;
+
+    --border: #333333;
+    --input: #333333;
+    --ring: #e07a5f;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-[var(--border)];
   }
-  
+
   body {
-    @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    @apply bg-[var(--background)] text-[var(--foreground)];
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
-  
+
   html {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
   }
 }
 
-/* Instagram-style scrollbar */
-::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
+/* Typography Hierarchy */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-playfair), Georgia, serif;
+  }
+
+  .font-body {
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono), monospace;
+  }
+
+  /* Text gradients */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-warm {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-gold) 50%, var(--accent-rose) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Text sizes */
+  .text-xs-tight {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .text-sm-tight {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .text-base-tight {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .text-lg-tight {
+    font-size: 1.125rem;
+    line-height: 1.625rem;
+  }
+
+  .text-xl-tight {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  .text-2xl-tight {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
 }
 
-/* Instagram-style animations */
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground);
+}
+
+/* Animations */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes slideUp {
-  from { 
+@keyframes slideInLeft {
+  from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateX(-20px);
   }
-  to { 
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes scaleIn {
-  from { 
+  from {
     opacity: 0;
     transform: scale(0.95);
   }
-  to { 
+  to {
     opacity: 1;
     transform: scale(1);
   }
 }
 
-@keyframes pulse {
+@keyframes pulse-soft {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out forwards;
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out forwards;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.4s ease-out forwards;
 }
 
 .animate-scale-in {
   animation: scaleIn 0.2s ease-out forwards;
 }
 
-.animate-pulse-slow {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
 }
 
-/* Instagram-style components */
-.ig-card {
-  @apply bg-card rounded-lg border border-border;
+.animate-bounce-soft {
+  animation: bounce-soft 1s ease-in-out infinite;
 }
 
-.ig-button-primary {
-  @apply bg-primary text-primary-foreground font-semibold rounded-md 
-         hover:bg-blue-600 transition-colors duration-200
-         disabled:opacity-50 disabled:cursor-not-allowed;
+/* Vellon Card Styles - Less rounded, more distinct separation */
+.vellon-card {
+  @apply bg-[var(--card)] rounded-lg border border-[var(--border)] shadow-sm transition-all duration-200;
 }
 
-.ig-button-secondary {
-  @apply bg-transparent text-primary font-semibold p-0 
-         hover:bg-secondary rounded transition-colors duration-200;
+.vellon-card-hover {
+  @apply hover:shadow-md hover:border-[var(--primary)]/30 hover:translate-y-[-2px];
 }
 
-.ig-button-ghost {
-  @apply bg-transparent hover:bg-secondary rounded transition-colors duration-200;
+.vellon-card-interactive {
+  @apply cursor-pointer;
 }
 
-.ig-input {
-  @apply w-full px-4 py-3 bg-secondary rounded border border-border 
-         focus:outline-none focus:border-primary transition-colors duration-200
-         placeholder:text-muted-foreground;
+.vellon-card-section {
+  @apply p-5 border-b border-[var(--border)];
 }
 
-.ig-avatar {
-  @apply rounded-full border-2 border-white shadow-sm;
+.vellon-card-section:last-child {
+  @apply border-b-0;
 }
 
-.ig-avatar-large {
-  @apply w-24 h-24 md:w-32 md:h-32;
+/* Vellon Button Styles */
+.vellon-btn {
+  @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)];
 }
 
-.ig-avatar-medium {
-  @apply w-12 h-12 md:w-16 md:h-16;
+.vellon-btn-primary {
+  @apply bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90 shadow-sm;
 }
 
-.ig-avatar-small {
-  @apply w-8 h-8 md:w-10 md:h-10;
+.vellon-btn-secondary {
+  @apply bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--secondary)]/80;
 }
 
-.ig-divider {
-  @apply border-t border-border my-4;
+.vellon-btn-outline {
+  @apply border border-[var(--border)] bg-transparent hover:bg-[var(--secondary)] text-[var(--foreground)];
 }
 
-.ig-text-caption {
-  @apply text-xs text-muted-foreground;
+.vellon-btn-ghost {
+  @apply bg-transparent hover:bg-[var(--secondary)] text-[var(--foreground)];
 }
 
-.ig-text-caption-bold {
-  @apply text-xs font-semibold text-foreground;
+.vellon-btn-sm {
+  @apply h-8 px-3 text-xs;
 }
 
-.ig-text-body {
-  @apply text-sm text-foreground;
+.vellon-btn-md {
+  @apply h-9 px-4;
 }
 
-.ig-text-subtitle {
-  @apply text-base font-semibold text-foreground;
+.vellon-btn-lg {
+  @apply h-11 px-6;
 }
 
-.ig-text-title {
-  @apply text-lg font-bold text-foreground;
+/* Vellon Input Styles */
+.vellon-input {
+  @apply w-full px-4 py-2.5 bg-[var(--background)] rounded-md border border-[var(--border)] 
+         focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 
+         transition-all duration-200 placeholder:text-[var(--muted-foreground)];
 }
 
-.ig-badge {
-  @apply inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full;
+/* Vellon Avatar Styles */
+.vellon-avatar {
+  @apply rounded-lg overflow-hidden;
 }
 
-.ig-badge-blue {
-  @apply bg-primary text-primary-foreground;
+.vellon-avatar-lg {
+  @apply w-20 h-20;
 }
 
-.ig-badge-red {
-  @apply bg-destructive text-destructive-foreground;
+.vellon-avatar-md {
+  @apply w-14 h-14;
 }
 
-/* Instagram-style navigation */
-.ig-navbar {
-  @apply fixed top-0 left-0 right-0 h-16 bg-background border-b border-border 
-         z-50 flex items-center justify-between px-4;
+.vellon-avatar-sm {
+  @apply w-10 h-10;
 }
 
-.ig-bottom-nav {
-  @apply fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border 
-         z-50 flex items-center justify-around px-4;
+.vellon-avatar-xs {
+  @apply w-8 h-8;
 }
 
-.ig-nav-item {
-  @apply flex flex-col items-center justify-center p-2 rounded-lg 
-         transition-colors duration-200;
+/* Vellon Badge Styles */
+.vellon-badge {
+  @apply inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-medium rounded-full;
 }
 
-.ig-nav-item-active {
-  @apply text-primary;
+.vellon-badge-primary {
+  @apply bg-[var(--primary)]/10 text-[var(--primary)];
 }
 
-.ig-nav-item-inactive {
-  @apply text-foreground;
+.vellon-badge-secondary {
+  @apply bg-[var(--secondary)] text-[var(--secondary-foreground)];
 }
 
-/* Instagram-style cards */
-.ig-story-ring {
-  @apply rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500;
+.vellon-badge-outline {
+  @apply border border-[var(--border)] bg-transparent text-[var(--foreground)];
 }
 
-.ig-story-viewed {
-  @apply bg-gray-300;
+/* Vellon Navigation */
+.vellon-nav-item {
+  @apply flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200;
 }
 
-.ig-post-card {
-  @apply bg-card rounded-lg border border-border mb-4 overflow-hidden;
+.vellon-nav-item-active {
+  @apply bg-[var(--primary)]/10 text-[var(--primary)];
 }
 
-.ig-post-header {
-  @apply flex items-center justify-between p-3;
+.vellon-nav-item-inactive {
+  @apply text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)];
 }
 
-.ig-post-actions {
-  @apply flex items-center gap-4 p-3;
+/* Vellon Post Card - More breathing room, less rounded */
+.vellon-post {
+  @apply bg-[var(--card)] rounded-lg border border-[var(--border)] mb-6 overflow-hidden;
 }
 
-.ig-post-content {
-  @apply w-full aspect-square object-cover;
+.vellon-post-header {
+  @apply flex items-center justify-between p-4 border-b border-[var(--border)];
 }
 
-.ig-post-footer {
-  @apply p-3;
+.vellon-post-actions {
+  @apply flex items-center gap-4 p-4;
 }
 
-/* Instagram-style profile */
-.ig-profile-header {
-  @apply p-4;
+.vellon-post-content {
+  @apply w-full;
 }
 
-.ig-profile-stats {
-  @apply flex items-center justify-around py-4;
+.vellon-post-footer {
+  @apply p-4 pt-0;
 }
 
-.ig-profile-stat {
-  @apply flex flex-col items-center;
+.vellon-post-media {
+  @apply w-full object-cover;
 }
 
-.ig-profile-stat-value {
-  @apply font-bold text-lg text-foreground;
+/* Vellon Grid - Varied aspect ratios */
+.vellon-grid-masonry {
+  @apply columns-2 md:columns-3 lg:columns-4 gap-4;
 }
 
-.ig-profile-stat-label {
-  @apply text-xs text-muted-foreground;
+.vellon-grid-masonry > * {
+  @apply break-inside-avoid mb-4;
 }
 
-.ig-profile-bio {
-  @apply mt-2 text-sm;
+.vellon-grid-uniform {
+  @apply grid grid-cols-2 md:grid-cols-3 gap-4;
 }
 
-.ig-profile-tabs {
-  @apply flex border-t border-border;
+/* Vellon Story/Status Circle - Less rounded */
+.vellon-circle {
+  @apply rounded-full p-[3px] bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)];
 }
 
-.ig-profile-tab {
-  @apply flex-1 flex items-center justify-center py-3 border-b-2 border-transparent
-         transition-colors duration-200;
+.vellon-circle-viewed {
+  @apply bg-[var(--border)];
 }
 
-.ig-profile-tab-active {
-  @apply border-primary text-primary;
-}
-
-.ig-profile-tab-inactive {
-  @apply border-transparent text-muted-foreground;
-}
-
-/* Instagram-style highlight */
-.ig-highlight {
-  @apply flex flex-col items-center gap-1 min-w-[70px];
-}
-
-.ig-highlight-circle {
-  @apply w-[70px] h-[70px] rounded-full p-[2px] bg-transparent;
-}
-
-.ig-highlight-circle-viewed {
-  @apply bg-gray-200;
-}
-
-.ig-highlight-circle-active {
-  @apply bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500;
-}
-
-.ig-highlight-label {
-  @apply text-xs text-center line-clamp-1 w-[70px];
-}
-
-/* Instagram-style input */
-.ig-textarea {
-  @apply w-full px-4 py-3 bg-secondary rounded border border-border 
-         focus:outline-none focus:border-primary transition-colors duration-200
-         resize-none placeholder:text-muted-foreground;
-}
-
-/* Instagram-style dialog */
-.ig-dialog-overlay {
-  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center;
-}
-
-.ig-dialog-content {
-  @apply bg-card rounded-lg max-w-md w-full mx-4 animate-scale-in;
-}
-
-/* Instagram-style toggle */
-.ig-toggle {
-  @apply w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer;
-}
-
-.ig-toggle-active {
-  @apply bg-primary;
-}
-
-.ig-toggle-inactive {
-  @apply bg-gray-300;
-}
-
-.ig-toggle-thumb {
-  @apply w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200;
-}
-
-.ig-toggle-active .ig-toggle-thumb {
-  @apply translate-x-5;
-}
-
-.ig-toggle-inactive .ig-toggle-thumb {
-  @apply translate-x-1;
-}
-
-/* Instagram-style verified badge */
-.ig-verified {
-  @apply text-blue-500;
-}
-
-/* Instagram-style create button */
-.ig-create-button {
-  @apply w-8 h-8 rounded-full bg-primary flex items-center justify-center
-         text-white transition-transform duration-200 hover:scale-105;
-}
-
-/* Instagram-style icon buttons */
-.ig-icon-button {
-  @apply p-2 rounded-full hover:bg-secondary transition-colors duration-200;
-}
-
-/* Instagram-style message bubbles */
-.ig-message-sent {
-  @apply bg-primary text-primary-foreground rounded-2xl rounded-tr-sm;
-}
-
-.ig-message-received {
-  @apply bg-secondary text-foreground rounded-2xl rounded-tl-sm;
-}
-
-/* Instagram-style empty state */
-.ig-empty-state {
-  @apply flex flex-col items-center justify-center py-12 px-4 text-center;
-}
-
-.ig-empty-state-icon {
-  @apply w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4;
-}
-
-.ig-empty-state-title {
-  @apply font-semibold text-lg mb-2;
-}
-
-.ig-empty-state-description {
-  @apply text-sm text-muted-foreground max-w-xs;
-}
-
-/* Instagram-style loader */
-.ig-loader {
-  @apply w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin;
-}
-
-/* Instagram-style search bar */
-.ig-search-bar {
+/* Vellon Search Bar */
+.vellon-search {
   @apply relative;
 }
 
-.ig-search-bar-input {
-  @apply w-full px-4 py-2 pl-10 bg-secondary rounded-lg border border-border 
-         focus:outline-none focus:border-primary transition-colors duration-200
-         placeholder:text-muted-foreground;
+.vellon-search-input {
+  @apply w-full pl-10 pr-4 py-2.5 bg-[var(--background)] rounded-lg border border-[var(--border)] 
+         focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 
+         transition-all duration-200 placeholder:text-[var(--muted-foreground)];
 }
 
-.ig-search-bar-icon {
-  @apply absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground;
+.vellon-search-icon {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)];
 }
 
-/* Instagram-style grid */
-.ig-grid {
-  @apply grid grid-cols-3 gap-1;
+/* Vellon Message Bubbles */
+.vellon-message-sent {
+  @apply bg-[var(--primary)] text-[var(--primary-foreground)] rounded-2xl rounded-tr-sm;
 }
 
-/* Instagram-style reel indicator */
-.ig-reel-indicator {
-  @apply absolute top-2 right-2 flex items-center gap-1 px-2 py-1 
-         bg-black/50 rounded-full text-white text-xs;
+.vellon-message-received {
+  @apply bg-[var(--secondary)] text-[var(--foreground)] rounded-2xl rounded-tl-sm;
 }
 
-/* Instagram-style like heart animation */
-@keyframes heartPop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.3); }
-  100% { transform: scale(1); }
+/* Vellon Divider */
+.vellon-divider {
+  @apply border-t border-[var(--border)] my-4;
 }
 
-.ig-heart-animated {
-  animation: heartPop 0.3s ease-out;
+/* Vellon Empty State */
+.vellon-empty {
+  @apply flex flex-col items-center justify-center py-12 px-4 text-center;
 }
 
-/* Instagram-style save */
-.ig-save-icon {
-  @apply transition-colors duration-200;
+.vellon-empty-icon {
+  @apply w-16 h-16 rounded-full bg-[var(--secondary)] flex items-center justify-center mb-4;
 }
 
-.ig-save-icon-filled {
-  @apply text-black;
+.vellon-empty-title {
+  @apply font-semibold text-lg mb-2 text-[var(--foreground)];
 }
 
-.ig-save-icon-outline {
-  @apply text-foreground hover:text-muted-foreground;
+.vellon-empty-description {
+  @apply text-sm text-[var(--muted-foreground)] max-w-xs;
+}
+
+/* Vellon Loading */
+.vellon-loader {
+  @apply w-6 h-6 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin;
+}
+
+/* Vellon Tab Bar - Side style for desktop */
+.vellon-side-nav {
+  @apply fixed left-0 top-0 h-screen w-64 bg-[var(--card)] border-r border-[var(--border)] flex flex-col z-40;
+}
+
+/* Vellon Content Container */
+.vellon-container {
+  @apply ml-0 md:ml-64 pt-0 md:pt-0 min-h-screen;
+}
+
+.vellon-content {
+  @apply max-w-4xl mx-auto p-4 md:p-6;
+}
+
+/* Vellon Overlay */
+.vellon-overlay {
+  @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-50;
+}
+
+.vellon-modal {
+  @apply bg-[var(--card)] rounded-lg max-w-lg w-full mx-4 animate-scale-in;
+}
+
+/* Vellon Toggle */
+.vellon-toggle {
+  @apply w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer;
+}
+
+.vellon-toggle-active {
+  @apply bg-[var(--primary)];
+}
+
+.vellon-toggle-inactive {
+  @apply bg-[var(--border)];
+}
+
+.vellon-toggle-thumb {
+  @apply w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200;
+}
+
+/* Utility Classes */
+@layer utilities {
+  .gap-x-sm {
+    gap: 0.5rem;
+  }
+
+  .gap-x-md {
+    gap: 1rem;
+  }
+
+  .gap-x-lg {
+    gap: 1.5rem;
+  }
+
+  .gap-x-xl {
+    gap: 2rem;
+  }
+
+  .p-sm {
+    padding: 0.5rem;
+  }
+
+  .p-md {
+    padding: 1rem;
+  }
+
+  .p-lg {
+    padding: 1.5rem;
+  }
+
+  .p-xl {
+    padding: 2rem;
+  }
+
+  .space-y-md > * + * {
+    margin-top: 1rem;
+  }
+
+  .space-y-lg > * + * {
+    margin-top: 1.5rem;
+  }
+
+  .space-x-md > * + * {
+    margin-left: 1rem;
+  }
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

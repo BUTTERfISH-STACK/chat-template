@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss"
+import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
@@ -17,6 +17,8 @@ const config: Config = {
         primary: {
           DEFAULT: "var(--primary)",
           foreground: "var(--primary-foreground)",
+          light: "var(--primary-light)",
+          dark: "var(--primary-dark)",
         },
         secondary: {
           DEFAULT: "var(--secondary)",
@@ -31,8 +33,13 @@ const config: Config = {
           foreground: "var(--muted-foreground)",
         },
         accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "var(--accent-foreground)",
+          DEFAULT: "var(--accent-gold)",
+          foreground: "var(--foreground)",
+          gold: "var(--accent-gold)",
+          teal: "var(--accent-teal)",
+          purple: "var(--accent-purple)",
+          rose: "var(--accent-rose)",
+          green: "var(--accent-green)",
         },
         popover: {
           DEFAULT: "var(--popover)",
@@ -42,32 +49,54 @@ const config: Config = {
           DEFAULT: "var(--card)",
           foreground: "var(--card-foreground)",
         },
-        gold: {
-          50: "var(--color-gold-50)",
-          100: "var(--color-gold-100)",
-          200: "var(--color-gold-200)",
-          300: "var(--color-gold-300)",
-          400: "var(--color-gold-400)",
-          500: "var(--color-gold-500)",
-          600: "var(--color-gold-600)",
-          700: "var(--color-gold-700)",
-          800: "var(--color-gold-800)",
-          900: "var(--color-gold-900)",
-          950: "var(--color-gold-950)",
-        },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "var(--radius-md)",
+        md: "calc(var(--radius-md) - 2px)",
+        sm: "var(--radius-sm)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        serif: ["var(--font-playfair)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "monospace"],
+      },
+      animation: {
+        "fade-in": "fadeIn 0.3s ease-out forwards",
+        "slide-in-left": "slideInLeft 0.3s ease-out forwards",
+        "slide-in-up": "slideInUp 0.4s ease-out forwards",
+        "scale-in": "scaleIn 0.2s ease-out forwards",
+        "pulse-soft": "pulse 2s ease-in-out infinite",
+        "bounce-soft": "bounceSoft 1s ease-in-out infinite",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        slideInLeft: {
+          "0%": { opacity: "0", transform: "translateX(-20px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        slideInUp: {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        scaleIn: {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        pulseSoft: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
+        bounceSoft: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-5px)" },
+        },
       },
     },
   },
   plugins: [],
-}
+};
 
-export default config
+export default config;
