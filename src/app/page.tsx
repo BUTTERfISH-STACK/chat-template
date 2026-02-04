@@ -154,7 +154,7 @@ export default function HomePage() {
       <TopNavBar />
 
       {/* Main Content */}
-      <main className="md:ml-64 min-h-screen">
+      <main className="md:ml-64 min-h-screen pt-16 md:pt-0">
         <div className="max-w-2xl mx-auto">
           {/* Stories Section - Horizontal Scroll */}
           <section className="border-b border-[var(--border)] py-5 px-4 md:px-6">
