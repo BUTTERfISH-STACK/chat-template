@@ -7,6 +7,7 @@ export default function WhatsAppAuthPage() {
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [serverUrl, setServerUrl] = useState("");
 
   useEffect(() => {
     // Poll for QR code and connection status
@@ -19,6 +20,9 @@ export default function WhatsAppAuthPage() {
           setQrCode(data.qrCode);
           setConnected(data.connected);
           setError("");
+          if (data.serverUrl) {
+            setServerUrl(data.serverUrl);
+          }
         } else {
           setError(data.error || "Failed to get QR code");
         }
@@ -59,6 +63,26 @@ export default function WhatsAppAuthPage() {
           <p className="text-muted-foreground mt-2">WhatsApp Authentication</p>
         </div>
 
+        {/* Server Status Card */}
+        {serverUrl && !error && (
+          <div className="mb-6 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-yellow-500">OTP Server Required</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Start the Express OTP server to use WhatsApp OTP:
+                </p>
+                <code className="text-xs bg-yellow-500/20 px-2 py-1 rounded mt-2 inline-block">
+                  npm run otp:dev
+                </code>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* QR Code Card */}
         <div className="card-premium animate-slide-up">
           <div className="text-center mb-6">
@@ -90,6 +114,7 @@ export default function WhatsAppAuthPage() {
                   </svg>
                 </div>
                 <p className="text-green-500 font-medium">WhatsApp Connected ✓</p>
+                <p className="text-sm text-muted-foreground mt-1">OTPs will be sent via WhatsApp</p>
               </div>
             ) : qrCode ? (
               <div className="flex flex-col items-center">
@@ -113,6 +138,12 @@ export default function WhatsAppAuthPage() {
                   </svg>
                 </div>
                 <p className="text-muted-foreground text-sm">Generating QR code...</p>
+                {!serverUrl && (
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Make sure the OTP server is running:<br/>
+                    <code className="bg-secondary px-1 rounded">npm run otp:dev</code>
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -138,8 +169,24 @@ export default function WhatsAppAuthPage() {
           </div>
         )}
 
+        {/* Free WhatsApp Info */}
+        <div className="mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-green-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-green-500">Free WhatsApp OTP</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Using Baileys - an open-source library that connects directly to WhatsApp Web.
+                No API keys or subscriptions required!
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Security Note */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground animate-fade-in">
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground animate-fade-in">
           <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>

@@ -4,12 +4,13 @@
 
 const express = require('express');
 const { otpRateLimiter, apiRateLimiter } = require('../middleware/rateLimiter');
-const { 
-  generateAndStoreOTP, 
-  verifyOTP, 
+const {
+  generateAndStoreOTP,
+  verifyOTP,
   getOTPStatus,
-  resetOTP 
+  resetOTP
 } = require('../services/otpService');
+const { sendOTP, isWhatsAppConnected } = require('../services/baileysWhatsapp');
 
 const router = express.Router();
 
@@ -59,10 +60,30 @@ router.post('/request-otp', apiRateLimiter, otpRateLimiter(), async (req, res) =
       });
     }
 
+    // Send OTP via WhatsApp if connected, otherwise log
+    let sendResult;
+    if (result.otp) {
+      const waConnected = isWhatsAppConnected();
+      if (waConnected) {
+        console.log(`[OTP Request] Sending OTP via WhatsApp to ${phone}`);
+        sendResult = await sendOTP(phone, result.otp);
+      } else {
+        console.log(`[OTP Request] WhatsApp not connected - OTP logged instead`);
+        console.log(`[DEV] OTP for ${phone}: ${result.otp}`);
+        sendResult = { success: false, devMode: true };
+      }
+    }
+
     return res.status(200).json({
       success: true,
-      message: result.message,
-      ...(result.otp && { otp: result.otp }) // Only in development
+      message: sendResult?.success 
+        ? 'OTP sent via WhatsApp' 
+        : sendResult?.devMode 
+          ? 'OTP sent (development mode - check server logs)'
+          : 'OTP sent to phone',
+      whatsappConnected: isWhatsAppConnected(),
+      ...(result.otp && process.env.NODE_ENV !== 'production' && { otp: result.otp }),
+      ...(sendResult?.devMode && { devMode: true })
     });
   } catch (error) {
     console.error('Error in /request-otp:', error);
@@ -204,6 +225,19 @@ router.get('/health', (req, res) => {
     success: true,
     message: 'OTP service is running',
     timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * GET /whatsapp/status
+ * Get WhatsApp connection status
+ */
+router.get('/whatsapp/status', (req, res) => {
+  const connected = isWhatsAppConnected();
+  res.status(200).json({
+    success: true,
+    connected,
+    message: connected ? 'WhatsApp connected' : 'WhatsApp not connected'
   });
 });
 

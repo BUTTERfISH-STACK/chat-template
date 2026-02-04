@@ -15,6 +15,7 @@ require('dotenv').config();
 const express = require('express');
 const { initRedis, closeConnection } = require('./services/otpService');
 const otpRoutes = require('./routes/otpRoutes');
+const { initBaileys, isWhatsAppConnected, getQRCode, onConnection } = require('./services/baileysWhatsapp');
 
 const app = express();
 const PORT = process.env.OTP_PORT || 3001;
@@ -51,6 +52,24 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api', otpRoutes);
+
+// WhatsApp QR Code endpoint
+app.get('/whatsapp/qr', (req, res) => {
+  const qr = getQRCode();
+  if (qr) {
+    res.json({
+      success: true,
+      qrCode: qr,
+      connected: isWhatsAppConnected()
+    });
+  } else {
+    res.json({
+      success: true,
+      qrCode: null,
+      connected: isWhatsAppConnected()
+    });
+  }
+});
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -113,6 +132,17 @@ async function startServer() {
     console.log('Initializing Redis connection...');
     await initRedis();
     
+    // Initialize Baileys WhatsApp connection
+    console.log('Initializing Baileys WhatsApp...');
+    initBaileys(
+      (qr, qrImage) => {
+        console.log('\n[WhatsApp] QR Code ready - Scan to connect');
+      },
+      (connected) => {
+        console.log('[WhatsApp] Connected! Ready to send OTPs');
+      }
+    );
+    
     // Start the server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -127,7 +157,12 @@ async function startServer() {
       console.log('  GET    /api/otp-status/:phone - Get OTP status');
       console.log('  DELETE /api/otp/:phone    - Reset OTP (debug)');
       console.log('  GET    /api/health        - Health check');
-      console.log('\n');
+      console.log('  GET    /whatsapp/qr       - Get WhatsApp QR code');
+      console.log('  GET    /api/whatsapp/status - WhatsApp connection status');
+      console.log('\nWhatsApp Authentication:');
+      console.log('  1. Go to http://localhost:3001/whatsapp/qr to get QR code');
+      console.log('  2. Scan with WhatsApp to connect');
+      console.log('  3. OTPs will be sent via WhatsApp for free!\n');
     });
 
     // Graceful shutdown
