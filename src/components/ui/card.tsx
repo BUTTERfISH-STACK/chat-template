@@ -2,14 +2,19 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+function Card({ className, variant = "default", ...props }: React.ComponentProps<"div"> & { variant?: "default" | "premium" | "glass" | "bordered" }) {
+  const variants = {
+    default: "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border border-[var(--card-border)] py-6 shadow-sm",
+    premium: "bg-gradient-to-br from-[var(--card)] to-[var(--muted)] text-card-foreground flex flex-col gap-6 rounded-xl border border-[var(--card-border)] py-6 shadow-md hover:shadow-lg transition-shadow duration-300",
+    glass: "bg-[var(--glass-bg)] backdrop-blur-lg text-card-foreground flex flex-col gap-6 rounded-xl border border-[var(--glass-border)] py-6 shadow-sm",
+    bordered: "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border-2 border-[var(--primary)]/20 py-6 shadow-sm",
+  }
+
   return (
     <div
       data-slot="card"
-      className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
-        className
-      )}
+      data-variant={variant}
+      className={cn(variants[variant], className)}
       {...props}
     />
   )
@@ -32,7 +37,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("leading-none font-semibold", className)}
+      className={cn("leading-none font-semibold tracking-tight", className)}
       {...props}
     />
   )
@@ -42,7 +47,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-muted-foreground text-sm leading-relaxed", className)}
       {...props}
     />
   )

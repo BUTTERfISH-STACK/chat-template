@@ -10,14 +10,15 @@ function Avatar({
   size = "default",
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Root> & {
-  size?: "xs" | "sm" | "default" | "lg" | "xl"
+  size?: "xs" | "sm" | "default" | "lg" | "xl" | "2xl"
 }) {
   const sizeClasses = {
     xs: "size-6",
     sm: "size-8",
     default: "size-10",
     lg: "size-14",
-    xl: "size-20"
+    xl: "size-20",
+    "2xl": "size-28"
   }
 
   return (
@@ -25,7 +26,7 @@ function Avatar({
       data-slot="avatar"
       data-size={size}
       className={cn(
-        "group/avatar relative flex shrink-0 overflow-hidden rounded-full select-none",
+        "group/avatar relative flex shrink-0 overflow-hidden rounded-full select-none ring-2 ring-[var(--card)]",
         sizeClasses[size],
         className
       )}
@@ -55,7 +56,7 @@ function AvatarFallback({
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        "bg-[var(--secondary)] text-[var(--primary)] flex size-full items-center justify-center rounded-full text-sm font-medium group-data-[size=xs]/avatar:text-xs group-data-[size=sm]/avatar:text-sm group-data-[size=lg]/avatar:text-lg group-data-[size=xl]/avatar:text-2xl",
+        "bg-[var(--secondary)] text-[var(--primary)] flex size-full items-center justify-center rounded-full text-sm font-semibold group-data-[size=xs]/avatar:text-xs group-data-[size=sm]/avatar:text-sm group-data-[size=lg]/avatar:text-lg group-data-[size=xl]/avatar:text-2xl group-data-[size=2xl]/avatar:text-4xl",
         className
       )}
       {...props}
@@ -175,23 +176,62 @@ function AvatarWithStatus({
 function AvatarPremium({
   className,
   gradientColor = "gold",
+  size = "default",
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Root> & {
-  gradientColor?: "gold" | "rose" | "blue"
+  gradientColor?: "gold" | "rose" | "blue" | "primary" | "purple"
+  size?: "sm" | "default" | "lg" | "xl"
 }) {
   const gradients = {
-    gold: "linear-gradient(135deg, var(--color-gold-500), var(--color-gold-600))",
-    rose: "linear-gradient(135deg, #f43f5e, #e11d48)",
-    blue: "linear-gradient(135deg, #3b82f6, #2563eb)"
+    gold: "linear-gradient(135deg, var(--accent-gold), #d97706)",
+    rose: "linear-gradient(135deg, var(--accent-rose), #be123c)",
+    blue: "linear-gradient(135deg, var(--accent-indigo), #4f46e5)",
+    primary: "linear-gradient(135deg, var(--primary), var(--primary-dark))",
+    purple: "linear-gradient(135deg, var(--accent-purple), #5b21b6)"
+  }
+
+  const ringSizes = {
+    sm: "p-0.5",
+    default: "p-0.5",
+    lg: "p-1",
+    xl: "p-1.5"
   }
 
   return (
-    <div className={cn("relative p-0.5 rounded-full", className)}>
+    <div 
+      className={cn("relative", ringSizes[size])}
+    >
       <div
         className="absolute inset-0 rounded-full"
         style={{ background: gradients[gradientColor] }}
       />
-      <Avatar className="bg-[var(--card)]" {...props} />
+      <Avatar className="bg-[var(--card)]" size={size} {...props} />
+    </div>
+  )
+}
+
+// Avatar with ring effect
+function AvatarRing({
+  className,
+  ringColor = "primary",
+  ...props
+}: React.ComponentProps<typeof AvatarPrimitive.Root> & {
+  ringColor?: "primary" | "gold" | "green" | "rose"
+}) {
+  const colors = {
+    primary: "var(--primary)",
+    gold: "var(--accent-gold)",
+    green: "var(--accent-green)",
+    rose: "var(--accent-rose)"
+  }
+
+  return (
+    <div className={cn("relative inline-block", className)}>
+      <Avatar {...props} />
+      <span 
+        className="absolute inset-0 rounded-full animate-pulse-ring opacity-75"
+        style={{ color: colors[ringColor] }}
+      />
     </div>
   )
 }
@@ -204,5 +244,6 @@ export {
   AvatarGroup,
   AvatarGroupCount,
   AvatarWithStatus,
-  AvatarPremium
+  AvatarPremium,
+  AvatarRing
 }

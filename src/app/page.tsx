@@ -158,16 +158,16 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto">
           {/* Stories Section - Horizontal Scroll */}
           <section className="border-b border-[var(--border)] py-5 px-4 md:px-6">
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {stories.map((story) => (
+            <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide">
+              {stories.map((story, index) => (
                 <div
                   key={story.id}
-                  className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
-                  style={{ minWidth: '70px' }}
+                  className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group animate-fade-in-up"
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div
                     className={cn(
-                      "w-16 h-16 rounded-full p-[2px] flex items-center justify-center",
+                      "w-18 h-18 rounded-full p-[2.5px] flex items-center justify-center transition-transform duration-300 group-hover:scale-105",
                       story.isViewed 
                         ? "bg-[var(--border)]" 
                         : "bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)]"
@@ -182,17 +182,17 @@ export default function HomePage() {
                       }}
                     >
                       <div 
-                        className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-xs"
+                        className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-sm shadow-sm"
                         style={{ 
                           background: 'var(--secondary)',
-                          fontSize: '1.25rem'
+                          fontSize: '1.35rem'
                         }}
                       >
                         {story.username.charAt(0).toUpperCase()}
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[64px]">
+                  <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[70px] group-hover:text-[var(--foreground)] transition-colors">
                     {story.isOwn ? "Your story" : story.username}
                   </p>
                 </div>
@@ -205,13 +205,13 @@ export default function HomePage() {
             {posts.map((post, index) => (
               <article
                 key={post.id}
-                className="vellon-card mb-8 animate-slide-in-up"
+                className="vellon-card mb-8 animate-fade-in-up overflow-hidden"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 {/* Post Header */}
                 <header className="vellon-post-header">
                   <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10 rounded-lg">
+                    <Avatar className="w-10 h-10 rounded-lg shadow-sm">
                       <AvatarImage src={post.avatar} alt={post.username} />
                       <AvatarFallback>
                         {post.username.charAt(0).toUpperCase()}
@@ -225,7 +225,11 @@ export default function HomePage() {
                         {post.username}
                       </Link>
                       {post.location && (
-                        <p className="text-xs text-[var(--muted-foreground)]">
+                        <p className="text-xs text-[var(--muted-foreground)] flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
                           {post.location}
                         </p>
                       )}
@@ -251,39 +255,41 @@ export default function HomePage() {
                 {/* Post Media - Varying Aspect Ratios */}
                 <div
                   className={cn(
-                    "bg-[var(--secondary)] cursor-pointer relative overflow-hidden",
+                    "bg-[var(--secondary)] cursor-pointer relative overflow-hidden transition-transform duration-500",
                     getAspectRatioClass(post.aspectRatio)
                   )}
                   onDoubleClick={() => toggleLike(post.id)}
                 >
                   {/* Placeholder for post image */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg
-                      className="w-16 h-16 text-[var(--muted-foreground)]/50"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
+                    <div className="w-20 h-20 rounded-full bg-[var(--muted)] flex items-center justify-center">
+                      <svg
+                        className="w-10 h-10 text-[var(--muted-foreground)]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
                   </div>
                 </div>
 
                 {/* Post Actions */}
                 <div className="vellon-post-actions pt-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
                     <button
-                      className="p-2 rounded-lg hover:bg-[var(--secondary)] transition-all duration-200 active:scale-90"
+                      className="p-2.5 rounded-lg hover:bg-[var(--secondary)] transition-all duration-200 active:scale-90"
                       onClick={() => toggleLike(post.id)}
                     >
                       <svg
                         className={cn(
-                          "w-6 h-6 transition-transform duration-200 hover:scale-110",
+                          "w-6 h-6 transition-all duration-200 hover:scale-110",
                           likedPosts.has(post.id) || post.isLiked
                             ? "fill-[var(--primary)] text-[var(--primary)]"
                             : "text-[var(--foreground)]"
@@ -295,7 +301,7 @@ export default function HomePage() {
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                       </svg>
                     </button>
-                    <button className="p-2 rounded-lg hover:bg-[var(--secondary)] transition-colors">
+                    <button className="p-2.5 rounded-lg hover:bg-[var(--secondary)] transition-colors">
                       <svg
                         className="w-6 h-6 text-[var(--foreground)]"
                         fill="none"
@@ -310,7 +316,7 @@ export default function HomePage() {
                         />
                       </svg>
                     </button>
-                    <button className="p-2 rounded-lg hover:bg-[var(--secondary)] transition-colors">
+                    <button className="p-2.5 rounded-lg hover:bg-[var(--secondary)] transition-colors">
                       <svg
                         className="w-6 h-6 text-[var(--foreground)]"
                         fill="none"
@@ -327,7 +333,7 @@ export default function HomePage() {
                     </button>
                   </div>
                   <button
-                    className="p-2 rounded-lg hover:bg-[var(--secondary)] transition-colors ml-auto"
+                    className="p-2.5 rounded-lg hover:bg-[var(--secondary)] transition-colors ml-auto"
                     onClick={() => toggleSave(post.id)}
                   >
                     <svg
@@ -356,14 +362,14 @@ export default function HomePage() {
                   <p className="font-medium text-sm mb-2">
                     {formatNumber(post.likes)} likes
                   </p>
-                  <p className="text-sm mb-3">
+                  <p className="text-sm mb-3 leading-relaxed">
                     <span className="font-medium">{post.username}</span>{" "}
                     {post.caption}
                   </p>
                   <button className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors mb-2">
                     View all {post.comments} comments
                   </button>
-                  <p className="text-xs text-[var(--muted-foreground)] uppercase tracking-wide">
+                  <p className="text-xs text-[var(--muted-foreground)] uppercase tracking-wider">
                     {post.timestamp} ago
                   </p>
                 </footer>
@@ -372,7 +378,7 @@ export default function HomePage() {
 
             {/* Load More */}
             <div className="flex justify-center py-8">
-              <button className="vellon-btn vellon-btn-outline vellon-btn-md">
+              <button className="vellon-btn vellon-btn-outline vellon-btn-md px-6">
                 Load More
               </button>
             </div>
