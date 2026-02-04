@@ -158,28 +158,41 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto">
           {/* Stories Section - Horizontal Scroll */}
           <section className="border-b border-[var(--border)] py-5 px-4 md:px-6">
-            <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
               {stories.map((story) => (
                 <div
                   key={story.id}
-                  className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group"
+                  className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
+                  style={{ minWidth: '70px' }}
                 >
                   <div
                     className={cn(
-                      "w-[72px] h-[72px] flex items-center justify-center transition-transform duration-200 group-hover:scale-105",
-                      story.isViewed ? "vellon-circle-viewed" : "vellon-circle"
+                      "w-16 h-16 rounded-full p-[2px] flex items-center justify-center",
+                      story.isViewed 
+                        ? "bg-[var(--border)]" 
+                        : "bg-gradient-to-tr from-[var(--primary)] via-[var(--accent-gold)] to-[var(--accent-rose)]"
                     )}
                   >
-                    <div className="w-[66px] h-[66px] rounded-full bg-[var(--card)] p-1">
-                      <Avatar className="w-full h-full">
-                        <AvatarImage src={story.avatar} alt={story.username} />
-                        <AvatarFallback className="text-sm">
-                          {story.username.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                    <div 
+                      className="w-full h-full rounded-full bg-[var(--card)] p-1"
+                      style={{ 
+                        background: story.isOwn 
+                          ? 'var(--secondary)' 
+                          : 'var(--card)'
+                      }}
+                    >
+                      <div 
+                        className="w-full h-full rounded-full flex items-center justify-center text-[var(--primary)] font-semibold text-xs"
+                        style={{ 
+                          background: 'var(--secondary)',
+                          fontSize: '1.25rem'
+                        }}
+                      >
+                        {story.username.charAt(0).toUpperCase()}
+                      </div>
                     </div>
                   </div>
-                  <p className="text-xs text-[var(--muted-foreground)] max-w-[72px] truncate text-center">
+                  <p className="text-xs text-[var(--muted-foreground)] truncate text-center max-w-[64px]">
                     {story.isOwn ? "Your story" : story.username}
                   </p>
                 </div>
