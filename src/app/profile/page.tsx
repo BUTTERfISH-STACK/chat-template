@@ -1,36 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
+import { useAuth } from "@/lib/auth-context";
 
-// User data - populated from API
-const user = {
-  name: "",
-  username: "",
-  bio: "",
-  avatar: "",
-  posts: 0,
-  followers: 0,
-  following: 0,
-  isOnline: false,
-};
+// Post interface
+interface Post {
+  id: string;
+  type: string;
+  aspectRatio: "square" | "portrait" | "landscape";
+  likes: number;
+  comments: number;
+}
 
-const posts: { id: string; type: string; aspectRatio: "square" | "portrait" | "landscape"; likes: number; comments: number }[] = [];
+// Stats interface
+interface UserStats {
+  posts: number;
+  followers: number;
+  following: number;
+}
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "tagged">("posts");
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  const [stats, setStats] = useState<UserStats>({
+    posts: 0,
+    followers: 0,
+    following: 0,
+  });
+  const [posts, setPosts] = useState<Post[]>([]);
 
+  // Determine if this is the user's own profile
+  useEffect(() => {
+    if (user) {
+      setIsOwnProfile(true);
+      // In a real app, you would check if the profile ID matches the current user
+    }
+  }, [user]);
+
+  // Format numbers
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
   };
 
+  // Get aspect ratio class
   const getAspectRatioClass = (ratio: string) => {
     switch (ratio) {
       case "portrait":
@@ -41,6 +64,15 @@ export default function ProfilePage() {
         return "aspect-square";
     }
   };
+
+  // Loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -62,10 +94,12 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="relative flex-shrink-0">
                 <Avatar className="w-32 h-32 rounded-xl">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="text-2xl">{user.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={user?.avatar || ""} alt={user?.name || "User"} />
+                  <AvatarFallback className="text-2xl">
+                    {user?.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
                 </Avatar>
-                {user.isOnline && (
+                {user && (
                   <div className="absolute bottom-1 right-1 w-4 h-4 bg-[var(--accent-green)] rounded-full border-2 border-[var(--card)]" />
                 )}
               </div>
@@ -74,50 +108,70 @@ export default function ProfilePage() {
               <div className="flex-1">
                 <div className="flex items-center gap-4 mb-4">
                   <h1 className="text-2xl font-display font-bold text-[var(--foreground)]">
-                    {user.username}
+                    {user?.name || "Guest User"}
                   </h1>
                   <div className="flex items-center gap-2">
-                    <Button
-                      className={cn(
-                        "vellon-btn px-6",
-                        isFollowing ? "vellon-btn-secondary" : "vellon-btn-primary"
-                      )}
-                      onClick={() => setIsFollowing(!isFollowing)}
-                    >
-                      {isFollowing ? "Following" : "Follow"}
-                    </Button>
-                    <Button variant="outline" className="vellon-btn">
-                      Message
-                    </Button>
+                    {isOwnProfile ? (
+                      <Link href="/settings">
+                        <Button className="vellon-btn vellon-btn-secondary px-6">
+                          Edit Profile
+                        </Button>
+                      </Link>
+                    ) : (
+                      <>
+                        <Button
+                          className={cn(
+                            "vellon-btn px-6",
+                            isFollowing ? "vellon-btn-secondary" : "vellon-btn-primary"
+                          )}
+                          onClick={() => setIsFollowing(!isFollowing)}
+                        >
+                          {isFollowing ? "Following" : "Follow"}
+                        </Button>
+                        <Button variant="outline" className="vellon-btn">
+                          Message
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* Stats */}
                 <div className="flex items-center gap-8 mb-4">
-                  <div className="text-center">
+                  <button className="text-center hover:opacity-75 transition-opacity">
                     <p className="text-lg font-semibold text-[var(--foreground)]">
-                      {user.posts}
+                      {formatNumber(stats.posts)}
                     </p>
                     <p className="text-sm text-[var(--muted-foreground)]">posts</p>
-                  </div>
-                  <div className="text-center">
+                  </button>
+                  <button className="text-center hover:opacity-75 transition-opacity">
                     <p className="text-lg font-semibold text-[var(--foreground)]">
-                      {formatNumber(user.followers)}
+                      {formatNumber(stats.followers)}
                     </p>
                     <p className="text-sm text-[var(--muted-foreground)]">followers</p>
-                  </div>
-                  <div className="text-center">
+                  </button>
+                  <button className="text-center hover:opacity-75 transition-opacity">
                     <p className="text-lg font-semibold text-[var(--foreground)]">
-                      {formatNumber(user.following)}
+                      {formatNumber(stats.following)}
                     </p>
                     <p className="text-sm text-[var(--muted-foreground)]">following</p>
-                  </div>
+                  </button>
                 </div>
 
                 {/* Bio */}
                 <div>
-                  <p className="font-medium text-[var(--foreground)]">{user.name}</p>
-                  <p className="text-sm text-[var(--foreground)] mt-1">{user.bio}</p>
+                  <p className="font-medium text-[var(--foreground)]">{user?.name || ""}</p>
+                  <p className="text-sm text-[var(--foreground)] mt-1 whitespace-pre-wrap">
+                    {user?.bio || "No bio yet"}
+                  </p>
+                  {user?.email && (
+                    <a
+                      href={`mailto:${user.email}`}
+                      className="text-sm text-[var(--primary)] hover:underline mt-2 inline-block"
+                    >
+                      {user.email}
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -126,48 +180,66 @@ export default function ProfilePage() {
             <div className="md:hidden">
               <div className="flex items-center gap-4 mb-4">
                 <Avatar className="w-20 h-20 rounded-xl">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="text-xl">{user.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={user?.avatar || ""} alt={user?.name || "User"} />
+                  <AvatarFallback className="text-xl">
+                    {user?.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <h1 className="text-xl font-display font-bold text-[var(--foreground)]">
-                    {user.username}
+                    {user?.name || "Guest User"}
                   </h1>
-                  <p className="text-sm text-[var(--muted-foreground)]">{user.name}</p>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    @{user?.name?.toLowerCase().replace(/\s+/g, "") || "username"}
+                  </p>
                 </div>
               </div>
 
-              <p className="text-sm text-[var(--foreground)] mb-4">{user.bio}</p>
+              <p className="text-sm text-[var(--foreground)] mb-4 whitespace-pre-wrap">
+                {user?.bio || "No bio yet"}
+              </p>
 
               <div className="flex items-center justify-around mb-4">
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-[var(--foreground)]">{user.posts}</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">posts</p>
-                </div>
-                <div className="text-center">
+                <button className="text-center hover:opacity-75 transition-opacity">
                   <p className="text-lg font-semibold text-[var(--foreground)]">
-                    {formatNumber(user.followers)}
+                    {formatNumber(stats.posts)}
+                  </p>
+                  <p className="text-xs text-[var(--muted-foreground)]">posts</p>
+                </button>
+                <button className="text-center hover:opacity-75 transition-opacity">
+                  <p className="text-lg font-semibold text-[var(--foreground)]">
+                    {formatNumber(stats.followers)}
                   </p>
                   <p className="text-xs text-[var(--muted-foreground)]">followers</p>
-                </div>
-                <div className="text-center">
+                </button>
+                <button className="text-center hover:opacity-75 transition-opacity">
                   <p className="text-lg font-semibold text-[var(--foreground)]">
-                    {formatNumber(user.following)}
+                    {formatNumber(stats.following)}
                   </p>
                   <p className="text-xs text-[var(--muted-foreground)]">following</p>
-                </div>
+                </button>
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  className={cn("flex-1 vellon-btn", isFollowing ? "vellon-btn-secondary" : "vellon-btn-primary")}
-                  onClick={() => setIsFollowing(!isFollowing)}
-                >
-                  {isFollowing ? "Following" : "Follow"}
-                </Button>
-                <Button variant="outline" className="flex-1 vellon-btn">
-                  Message
-                </Button>
+                {isOwnProfile ? (
+                  <Link href="/settings" className="flex-1">
+                    <Button className="w-full vellon-btn vellon-btn-secondary">
+                      Edit Profile
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Button
+                      className={cn("flex-1 vellon-btn", isFollowing ? "vellon-btn-secondary" : "vellon-btn-primary")}
+                      onClick={() => setIsFollowing(!isFollowing)}
+                    >
+                      {isFollowing ? "Following" : "Follow"}
+                    </Button>
+                    <Button variant="outline" className="flex-1 vellon-btn">
+                      Message
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </header>
@@ -175,7 +247,13 @@ export default function ProfilePage() {
           {/* Highlights */}
           <div className="vellon-card-section">
             <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
-              {/* Highlights will be loaded from API */}
+              {/* Highlights will be loaded from API - placeholder for now */}
+              <div className="flex-shrink-0 flex flex-col items-center gap-1">
+                <div className="w-16 h-16 rounded-full bg-[var(--secondary)] flex items-center justify-center">
+                  <span className="text-2xl">✨</span>
+                </div>
+                <span className="text-xs text-[var(--muted-foreground)]">New</span>
+              </div>
             </div>
           </div>
 
@@ -233,9 +311,15 @@ export default function ProfilePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <p className="vellon-empty-title">No posts yet</p>
+                <p className="vellon-empty-title">
+                  {activeTab === "posts" ? "No posts yet" : activeTab === "saved" ? "No saved posts" : "No tagged posts"}
+                </p>
                 <p className="vellon-empty-description">
-                  Posts will appear here when available.
+                  {activeTab === "posts" 
+                    ? "When you share posts, they'll appear here." 
+                    : activeTab === "saved" 
+                    ? "Save posts to view them here." 
+                    : "When people tag you, it'll appear here."}
                 </p>
               </div>
             ) : (
