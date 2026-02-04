@@ -11,29 +11,18 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
 
-  const formatPhoneNumber = (value: string) => {
-    // Remove all non-digits
-    const digits = value.replace(/\D/g, "");
-    
-    // Format as South African phone number
-    if (digits.length === 0) return "";
-    if (digits.length <= 3) return `+${digits}`;
-    if (digits.length <= 6) return `+${digits.slice(0, 3)} ${digits.slice(3)}`;
-    return `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)}`;
-  };
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setPhoneNumber(formatted);
+    // Only allow digits
+    const value = e.target.value.replace(/\D/g, "");
+    setPhoneNumber(value);
     setError("");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate phone number
-    const digits = phoneNumber.replace(/\D/g, "");
-    if (digits.length < 10) {
+    // Validate phone number (at least 10 digits)
+    if (phoneNumber.length < 10) {
       setError("Please enter a valid phone number");
       return;
     }
@@ -48,13 +37,13 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phoneNumber: `+${digits.replace(/\D/g, "")}`,
+          phoneNumber: `+${phoneNumber}`,
         }),
       });
 
       if (response.ok) {
         // Store phone number in session storage for OTP verification
-        sessionStorage.setItem("phoneNumber", phoneNumber);
+        sessionStorage.setItem("phoneNumber", `+${phoneNumber}`);
         router.push("/otp");
       } else {
         setError("Failed to send OTP. Please try again.");

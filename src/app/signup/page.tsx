@@ -24,17 +24,10 @@ export default function SignupPage() {
     email: "",
   });
 
-  const formatPhoneNumber = (value: string) => {
-    const digits = value.replace(/\D/g, "");
-    if (digits.length === 0) return "";
-    if (digits.length <= 3) return `+${digits}`;
-    if (digits.length <= 6) return `+${digits.slice(0, 3)} ${digits.slice(3)}`;
-    return `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)}`;
-  };
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setFormData({ ...formData, phoneNumber: formatted });
+    // Only allow digits
+    const value = e.target.value.replace(/\D/g, "");
+    setFormData({ ...formData, phoneNumber: value });
     setError("");
   };
 
@@ -45,8 +38,7 @@ export default function SignupPage() {
   };
 
   const validateForm = () => {
-    const digits = formData.phoneNumber.replace(/\D/g, "");
-    if (digits.length < 10) {
+    if (formData.phoneNumber.length < 10) {
       setError("Please enter a valid phone number");
       return false;
     }
@@ -111,13 +103,14 @@ export default function SignupPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            phoneNumber: `+${digits}`,
+            phoneNumber: `+${formData.phoneNumber}`,
           }),
         });
 
         if (otpResponse.ok) {
           // Store form data in session for after OTP verification
           sessionStorage.setItem("signupData", JSON.stringify(formData));
+          sessionStorage.setItem("phoneNumber", `+${formData.phoneNumber}`);
           sessionStorage.setItem("isSignup", "true");
           router.push("/otp");
         } else {
@@ -130,8 +123,6 @@ export default function SignupPage() {
       }
     }
   };
-
-  const digits = formData.phoneNumber.replace(/\D/g, "");
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">

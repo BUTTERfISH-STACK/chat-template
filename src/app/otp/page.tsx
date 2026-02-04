@@ -141,14 +141,13 @@ export default function OTPPage() {
 
     // Resend OTP via API
     try {
-      const digits = phoneNumber.replace(/\D/g, "");
       await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phoneNumber: `+${digits}`,
+          phoneNumber,
         }),
       });
     } catch (error) {
