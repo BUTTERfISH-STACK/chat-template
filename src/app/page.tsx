@@ -151,10 +151,12 @@ export default function HomePage() {
       <SideNav />
 
       {/* Mobile Top Navigation */}
-      <TopNavBar />
+      <div className="md:hidden">
+        <TopNavBar />
+      </div>
 
       {/* Main Content */}
-      <main className="md:ml-64 min-h-screen pt-16">
+      <main className="md:ml-64 min-h-screen">
         <div className="max-w-2xl mx-auto">
           {/* Stories Section - Horizontal Scroll */}
           <section className="border-b border-[var(--border)] py-5 px-4 md:px-6">
