@@ -26,8 +26,8 @@ export const SECURITY_CONFIG = {
   RATE_LIMIT_MAX_REQUESTS: 10,
   
   // Phone Number Configuration
-  PHONE_MIN_LENGTH: 10,
-  PHONE_MAX_LENGTH: 15,
+  PHONE_MIN_LENGTH: 7,
+  PHONE_MAX_LENGTH: 20,
 } as const;
 
 // ============================================================================
@@ -167,7 +167,7 @@ export function validatePhoneNumber(phoneNumber: string): boolean {
   }
   
   // Validate format: must start with + followed by digits, or be all digits
-  const phoneRegex = /^\+?[1-9]\d{6,14}$/;
+  const phoneRegex = /^\+?[0-9]\d{6,18}$/;
   return phoneRegex.test(normalized);
 }
 
