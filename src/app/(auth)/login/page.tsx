@@ -37,10 +37,18 @@ export default function LoginPage() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-
+      // Check response status before parsing JSON
       if (!response.ok) {
-        throw new Error(data.error || "Authentication failed");
+        const text = await response.text();
+        let errorMessage = "Authentication failed";
+        try {
+          const data = JSON.parse(text);
+          errorMessage = data.error || errorMessage;
+        } catch {
+          // Use raw text if not JSON
+          errorMessage = text || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       // Token is now set as a cookie by the server

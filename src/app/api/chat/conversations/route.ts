@@ -46,14 +46,23 @@ interface ParticipantType {
   lastReadAt: Date | null;
 }
 
-// Helper to verify JWT and get user
-async function getUserFromToken(request: NextRequest): Promise<UserType | null> {
+// Helper to verify JWT and get user from cookie
+async function getUserFromRequest(request: NextRequest): Promise<UserType | null> {
+  // Try to get token from Authorization header first, then from cookies
+  let token: string | null = null;
+  
   const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else {
+    // Try cookies
+    token = request.cookies.get('authToken')?.value || null;
+  }
+  
+  if (!token) {
     return null;
   }
-
-  const token = authHeader.split(' ')[1];
+  
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
     const user = db.select()
@@ -69,7 +78,7 @@ async function getUserFromToken(request: NextRequest): Promise<UserType | null> 
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getUserFromToken(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -147,7 +156,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getUserFromToken(request);
+    const user = await getUserFromRequest(request);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
