@@ -45,11 +45,11 @@ export default function HomePage() {
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
 
   const handleLogin = () => {
-    router.push("/auth/login");
+    router.push("/login");
   };
 
   const handleRegister = () => {
-    router.push("/auth/login");
+    router.push("/login");
   };
 
   const toggleLike = (postId: string) => {
