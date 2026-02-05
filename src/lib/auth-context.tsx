@@ -33,6 +33,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   signIn: () => void;
   signOut: () => void;
+  logout: () => void;
   updateUser: (updates: Partial<User>) => void;
 }
 
@@ -102,6 +103,7 @@ function AuthContextProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!session,
         signIn: handleSignIn,
         signOut: handleSignOut,
+        logout: handleSignOut,
         updateUser,
       }}
     >
