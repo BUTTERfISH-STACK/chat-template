@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type LoginMethod = "phone" | "email";
+
 export default function LoginPage() {
   const router = useRouter();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [method, setMethod] = useState<LoginMethod>("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,6 +22,11 @@ export default function LoginPage() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPhoneNumber(value);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
   };
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,18 +51,29 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    if (!phoneNumber || phoneNumber.length < 7) {
-      setError("Please enter a valid phone number");
-      return;
+    if (method === "phone") {
+      if (!phoneNumber || phoneNumber.length < 7) {
+        setError("Please enter a valid phone number");
+        return;
+      }
+    } else {
+      if (!email || !email.includes("@")) {
+        setError("Please enter a valid email address");
+        return;
+      }
     }
 
     setIsLoading(true);
 
     try {
+      const body = method === "phone" 
+        ? { phoneNumber, action: "send" }
+        : { email, action: "send" };
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -64,11 +83,10 @@ export default function LoginPage() {
       }
 
       // Show success and move to OTP step
-      setStep("otp");
+      setOtp("");
       setExpiresIn(data.expiresIn || 300);
       startResendTimer(60);
 
-      // Log OTP in development for testing
       if (data.debugOtp) {
         console.log("OTP for testing:", data.debugOtp);
       }
@@ -91,10 +109,14 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      const body = method === "phone"
+        ? { phoneNumber, otp, action: "verify" }
+        : { email, otp, action: "verify" };
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber, otp, action: "verify" }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -126,10 +148,14 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      const body = method === "phone"
+        ? { phoneNumber, action: "send" }
+        : { email, action: "send" };
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -152,8 +178,13 @@ export default function LoginPage() {
   };
 
   const handleBack = () => {
-    setStep("phone");
     setOtp("");
+    setError("");
+    setResendTimer(0);
+  };
+
+  const toggleMethod = () => {
+    setMethod(method === "phone" ? "email" : "phone");
     setError("");
   };
 
@@ -161,24 +192,58 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
       <div className="w-full max-w-md p-6 bg-[var(--card)] rounded-lg border shadow-lg">
         <h1 className="text-2xl font-bold text-[var(--foreground)] mb-6 text-center">
-          {step === "phone" ? "Vellon Chat" : "Enter OTP"}
+          Vellon Chat
         </h1>
 
-        {step === "phone" ? (
+        {/* Method Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex bg-[var(--muted)] rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setMethod("phone")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                method === "phone"
+                  ? "bg-[var(--primary)] text-white"
+                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              📱 Phone
+            </button>
+            <button
+              type="button"
+              onClick={() => setMethod("email")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                method === "email"
+                  ? "bg-[var(--primary)] text-white"
+                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              ✉️ Email
+            </button>
+          </div>
+        </div>
+
+        {otp === "" ? (
           <>
             <p className="text-sm text-[var(--muted-foreground)] mb-6 text-center">
-              Enter your phone number to login or create an account
+              {method === "phone"
+                ? "Enter your phone number to login or create an account"
+                : "Enter your email to login or create an account"}
             </p>
 
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Label htmlFor={method === "phone" ? "phoneNumber" : "email"}>
+                  {method === "phone" ? "Phone Number" : "Email Address"}
+                </Label>
                 <Input
-                  id="phoneNumber"
-                  type="tel"
-                  placeholder="+1 234 567 8900"
-                  value={phoneNumber}
-                  onChange={handlePhoneChange}
+                  id={method === "phone" ? "phoneNumber" : "email"}
+                  type={method === "phone" ? "tel" : "email"}
+                  placeholder={
+                    method === "phone" ? "+1 234 567 8900" : "your@email.com"
+                  }
+                  value={method === "phone" ? phoneNumber : email}
+                  onChange={method === "phone" ? handlePhoneChange : handleEmailChange}
                   className="w-full"
                   disabled={isLoading}
                   required
@@ -191,11 +256,7 @@ export default function LoginPage() {
                 </p>
               )}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <span className="animate-spin mr-2">⟳</span>
                 ) : null}
@@ -206,7 +267,10 @@ export default function LoginPage() {
         ) : (
           <>
             <p className="text-sm text-[var(--muted-foreground)] mb-6 text-center">
-              Enter the 6-digit code sent to {phoneNumber}
+              Enter the 6-digit code sent to{" "}
+              <span className="font-medium">
+                {method === "phone" ? phoneNumber : email}
+              </span>
             </p>
 
             <form onSubmit={handleVerifyOtp} className="space-y-4">
@@ -270,10 +334,18 @@ export default function LoginPage() {
 
             {expiresIn > 0 && (
               <p className="text-xs text-[var(--muted-foreground)] text-center mt-4">
-                OTP expires in {Math.floor(expiresIn / 60)}:{String(expiresIn % 60).padStart(2, "0")}
+                OTP expires in {Math.floor(expiresIn / 60)}:
+                {String(expiresIn % 60).padStart(2, "0")}
               </p>
             )}
           </>
+        )}
+
+        {/* Development Mode Hint */}
+        {process.env.NODE_ENV === "development" && otp === "" && (
+          <p className="text-xs text-[var(--muted-foreground)] text-center mt-4">
+            💡 Tip: You can use either phone or email for OTP
+          </p>
         )}
       </div>
     </div>

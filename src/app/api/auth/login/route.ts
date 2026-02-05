@@ -1,5 +1,5 @@
 /**
- * Secure Authentication API - Phone-based login with OTP verification
+ * Secure Authentication API - Phone and Email-based login with OTP verification
  * Uses local SQLite database for user storage with comprehensive security measures
  * 
  * Security Features:
@@ -9,6 +9,7 @@
  * - Constant-time comparison to prevent timing attacks
  * - Comprehensive input validation
  * - Security event logging
+ * - Support for both SMS and Email OTP
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -30,7 +31,16 @@ import {
   SecurityErrorCodes,
   formatSecurityError,
   SECURITY_CONFIG,
+  validateEmail,
 } from '@/lib/security';
+
+// Import email OTP service (CommonJS module)
+let emailOtpService: any = null;
+try {
+  emailOtpService = require('@/services/emailOtpService');
+} catch (e) {
+  console.warn('Email OTP service not available:', e);
+}
 
 // ============================================================================
 // TYPES
@@ -39,6 +49,7 @@ import {
 interface UserResult {
   id: string;
   phoneNumber: string;
+  email?: string;
   name: string | null;
   avatar: string | null;
 }
@@ -48,6 +59,7 @@ interface OTPEntry {
   expiresAt: number;
   attempts: number;
   lastAttemptAt: number;
+  type: 'phone' | 'email';
 }
 
 interface SessionEntry {
@@ -57,58 +69,44 @@ interface SessionEntry {
 }
 
 // ============================================================================
-// IN-MEMORY STORAGE (Use Redis in production)
+// IN-MEMORY STORAGE
 // ============================================================================
 
-/**
- * OTP storage with hashed values and attempt tracking
- * In production, use Redis with proper persistence
- */
 const otpStore = new Map<string, OTPEntry>();
-
-/**
- * Session storage for token validation
- * In production, use Redis or a database
- */
 const sessionStore = new Map<string, SessionEntry>();
 
 // ============================================================================
 // DATABASE OPERATIONS
 // ============================================================================
 
-/**
- * Generate a unique user ID
- * @returns A unique user ID
- */
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
-/**
- * Create or get user from SQLite database
- * @param phoneNumber - The normalized phone number
- * @returns The user object
- * @throws Error if database operation fails
- */
-async function createOrGetUser(phoneNumber: string): Promise<UserResult> {
+async function createOrGetUser(
+  phoneNumber?: string, 
+  email?: string
+): Promise<UserResult> {
   try {
     const dbPath = process.env.DATABASE_PATH || './data/database.db';
     const Database = (await import('better-sqlite3')).default;
     const sqlite = new Database(dbPath);
 
-    // Check if user exists
-    const stmt = sqlite.prepare('SELECT * FROM users WHERE phone_number = ?');
-    const existingUser = stmt.get(phoneNumber) as {
-      id: string;
-      phone_number: string;
-      name: string | null;
-      avatar: string | null;
-    } | undefined;
+    // Try to find user by phone first
+    let existingUser = phoneNumber 
+      ? sqlite.prepare('SELECT * FROM users WHERE phone_number = ?').get(phoneNumber) as any
+      : null;
+
+    // Try to find user by email
+    if (!existingUser && email) {
+      existingUser = sqlite.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+    }
 
     if (existingUser) {
       return {
         id: existingUser.id,
         phoneNumber: existingUser.phone_number,
+        email: existingUser.email,
         name: existingUser.name,
         avatar: existingUser.avatar,
       };
@@ -117,23 +115,28 @@ async function createOrGetUser(phoneNumber: string): Promise<UserResult> {
     // Create new user
     const userId = generateId();
     const now = Date.now();
-    const displayName = `User ${phoneNumber.slice(-4)}`;
+    const displayName = phoneNumber 
+      ? `User ${phoneNumber.slice(-4)}`
+      : email 
+        ? `User ${email.split('@')[0].slice(0, 4)}`
+        : 'User';
 
     sqlite.prepare(`
-      INSERT INTO users (id, phone_number, name, avatar, is_verified, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(userId, phoneNumber, displayName, null, 1, now, now);
+      INSERT INTO users (id, phone_number, email, name, avatar, is_verified, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(userId, phoneNumber || null, email || null, displayName, null, 1, now, now);
 
     logSecurityEvent({
       type: SecurityEventType.LOGIN_SUCCESS,
       timestamp: Date.now(),
-      identifier: phoneNumber,
+      identifier: phoneNumber || email || 'unknown',
       details: { action: 'user_created', userId },
     });
 
     return {
       id: userId,
-      phoneNumber,
+      phoneNumber: phoneNumber || '',
+      email: email,
       name: displayName,
       avatar: null,
     };
@@ -147,15 +150,8 @@ async function createOrGetUser(phoneNumber: string): Promise<UserResult> {
   }
 }
 
-/**
- * Send OTP via SMS (simulated - integrate with SMS service in production)
- * @param phoneNumber - The phone number to send OTP to
- * @param otp - The OTP to send
- * @returns True if sent successfully
- */
 async function sendOTP(phoneNumber: string, otp: string): Promise<boolean> {
   try {
-    // In production, integrate with Twilio, WhatsApp Business API, etc.
     console.log(`[SMS] OTP for ${phoneNumber}: ${otp}`);
     
     logSecurityEvent({
@@ -173,32 +169,25 @@ async function sendOTP(phoneNumber: string, otp: string): Promise<boolean> {
 }
 
 // ============================================================================
-// REQUEST HANDLERS
+// OTP HANDLERS - PHONE
 // ============================================================================
 
-/**
- * Handle OTP request (send OTP to phone number)
- * @param phoneNumber - The phone number
- * @param request - The Next.js request object
- * @returns Response with success status
- */
-async function handleSendOTP(
+async function handleSendPhoneOTP(
   phoneNumber: string,
   request: NextRequest
 ): Promise<NextResponse> {
-  // Get client IP for rate limiting
   const ip = request.headers.get('x-forwarded-for') || 
              request.headers.get('x-real-ip') || 
              'unknown';
 
-  // Check rate limit for IP
-  const ipRateLimit = checkRateLimit(`otp:${ip}`);
+  // Check IP rate limit
+  const ipRateLimit = checkRateLimit(`otp:phone:${ip}`);
   if (!ipRateLimit.allowed) {
     logSecurityEvent({
       type: SecurityEventType.RATE_LIMIT_EXCEEDED,
       timestamp: Date.now(),
       identifier: ip,
-      details: { endpoint: 'sendOTP', retryAfter: ipRateLimit.retryAfter },
+      details: { endpoint: 'sendPhoneOTP', retryAfter: ipRateLimit.retryAfter },
     });
 
     return NextResponse.json(
@@ -209,21 +198,19 @@ async function handleSendOTP(
       },
       { 
         status: 429,
-        headers: {
-          'Retry-After': Math.ceil((ipRateLimit.retryAfter || 0) / 1000).toString(),
-        },
+        headers: { 'Retry-After': Math.ceil((ipRateLimit.retryAfter || 0) / 1000).toString() },
       }
     );
   }
 
-  // Check rate limit for phone number
-  const phoneRateLimit = checkRateLimit(`otp:${phoneNumber}`);
+  // Check phone rate limit
+  const phoneRateLimit = checkRateLimit(`otp:phone:${phoneNumber}`);
   if (!phoneRateLimit.allowed) {
     logSecurityEvent({
       type: SecurityEventType.RATE_LIMIT_EXCEEDED,
       timestamp: Date.now(),
       identifier: phoneNumber,
-      details: { endpoint: 'sendOTP', retryAfter: phoneRateLimit.retryAfter },
+      details: { endpoint: 'sendPhoneOTP', retryAfter: phoneRateLimit.retryAfter },
     });
 
     return NextResponse.json(
@@ -234,29 +221,23 @@ async function handleSendOTP(
       },
       { 
         status: 429,
-        headers: {
-          'Retry-After': Math.ceil((phoneRateLimit.retryAfter || 0) / 1000).toString(),
-        },
+        headers: { 'Retry-After': Math.ceil((phoneRateLimit.retryAfter || 0) / 1000).toString() },
       }
     );
   }
 
-  // Generate secure OTP
   const otp = generateSecureOTP();
   const expiresAt = Date.now() + SECURITY_CONFIG.OTP_EXPIRY_MS;
-
-  // Hash OTP with salt for secure storage
   const hashedOTP = hashOTP(otp);
 
-  // Store hashed OTP
   otpStore.set(phoneNumber, {
     hashedOTP,
     expiresAt,
     attempts: 0,
     lastAttemptAt: 0,
+    type: 'phone',
   });
 
-  // Send OTP via SMS
   const sent = await sendOTP(phoneNumber, otp);
   
   if (!sent) {
@@ -267,43 +248,85 @@ async function handleSendOTP(
     );
   }
 
-  // Return success (include OTP only in development)
   return NextResponse.json({
     success: true,
     message: 'OTP sent successfully',
-    expiresIn: SECURITY_CONFIG.OTP_EXPIRY_MS / 1000, // seconds
-    // Only in development - remove in production
+    method: 'phone',
+    expiresIn: SECURITY_CONFIG.OTP_EXPIRY_MS / 1000,
     ...(process.env.NODE_ENV === 'development' && { debugOtp: otp }),
   });
 }
 
-/**
- * Handle OTP verification
- * @param phoneNumber - The phone number
- * @param otp - The OTP to verify
- * @param request - The Next.js request object
- * @returns Response with user data and session token
- */
-async function handleVerifyOTP(
-  phoneNumber: string,
-  otp: string,
+// ============================================================================
+// OTP HANDLERS - EMAIL
+// ============================================================================
+
+async function handleSendEmailOTP(
+  email: string,
   request: NextRequest
 ): Promise<NextResponse> {
-  // Get client IP for rate limiting
+  if (!emailOtpService) {
+    return NextResponse.json(
+      { error: 'Email OTP service is not available' },
+      { status: 503 }
+    );
+  }
+
   const ip = request.headers.get('x-forwarded-for') || 
              request.headers.get('x-real-ip') || 
              'unknown';
 
-  // Check rate limit for IP
-  const ipRateLimit = checkRateLimit(`verify:${ip}`);
+  // Check IP rate limit
+  const ipRateLimit = checkRateLimit(`otp:email:${ip}`);
   if (!ipRateLimit.allowed) {
-    logSecurityEvent({
-      type: SecurityEventType.RATE_LIMIT_EXCEEDED,
-      timestamp: Date.now(),
-      identifier: ip,
-      details: { endpoint: 'verifyOTP', retryAfter: ipRateLimit.retryAfter },
-    });
+    return NextResponse.json(
+      {
+        error: 'Too many requests. Please try again later.',
+        code: SecurityErrorCodes.RATE_LIMIT_EXCEEDED,
+        retryAfter: Math.ceil((ipRateLimit.retryAfter || 0) / 1000),
+      },
+      { 
+        status: 429,
+        headers: { 'Retry-After': Math.ceil((ipRateLimit.retryAfter || 0) / 1000).toString() },
+      }
+    );
+  }
 
+  const result = await emailOtpService.sendEmailOTP(email);
+  
+  if (!result.success) {
+    return NextResponse.json(
+      { error: result.message },
+      { status: result.retryAfter ? 429 : 400 }
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    message: result.message,
+    method: 'email',
+    expiresIn: result.expiresIn,
+    ...(process.env.NODE_ENV !== 'production' && { debugOtp: result.debugOtp }),
+  });
+}
+
+// ============================================================================
+// VERIFICATION HANDLERS
+// ============================================================================
+
+async function handleVerifyOTP(
+  identifier: string,
+  otp: string,
+  type: 'phone' | 'email',
+  request: NextRequest
+): Promise<NextResponse> {
+  const ip = request.headers.get('x-forwarded-for') || 
+             request.headers.get('x-real-ip') || 
+             'unknown';
+
+  // Check IP rate limit
+  const ipRateLimit = checkRateLimit(`verify:${type}:${ip}`);
+  if (!ipRateLimit.allowed) {
     return NextResponse.json(
       {
         error: 'Too many verification attempts. Please try again later.',
@@ -312,24 +335,53 @@ async function handleVerifyOTP(
       },
       { 
         status: 429,
-        headers: {
-          'Retry-After': Math.ceil((ipRateLimit.retryAfter || 0) / 1000).toString(),
-        },
+        headers: { 'Retry-After': Math.ceil((ipRateLimit.retryAfter || 0) / 1000).toString() },
       }
     );
   }
 
-  // Get stored OTP data
-  const storedData = otpStore.get(phoneNumber);
-  
-  if (!storedData) {
-    logSecurityEvent({
-      type: SecurityEventType.OTP_FAILED,
-      timestamp: Date.now(),
-      identifier: phoneNumber,
-      details: { reason: 'otp_not_found' },
+  // For email OTP, use the email service
+  if (type === 'email' && emailOtpService) {
+    const result = await emailOtpService.verifyEmailOTP(identifier, otp);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          error: result.message,
+          ...(result.attemptsRemaining && { remainingAttempts: result.attemptsRemaining })
+        },
+        { status: 400 }
+      );
+    }
+
+    // Create or get user with email
+    const user = await createOrGetUser(undefined, identifier);
+    const { token, expiresAt } = generateSessionToken();
+
+    sessionStore.set(token, {
+      userId: user.id,
+      expiresAt,
+      createdAt: Date.now(),
     });
 
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        phoneNumber: user.phoneNumber,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+      },
+      token,
+      expiresIn: SECURITY_CONFIG.TOKEN_EXPIRY_MS / 1000,
+    });
+  }
+
+  // Phone OTP verification
+  const storedData = otpStore.get(identifier);
+  
+  if (!storedData) {
     return NextResponse.json(
       {
         error: 'OTP not sent or expired. Please request a new OTP.',
@@ -339,18 +391,10 @@ async function handleVerifyOTP(
     );
   }
 
-  // Check if OTP is expired
   if (Date.now() > storedData.expiresAt) {
-    otpStore.delete(phoneNumber);
-    resetRateLimit(`otp:${phoneNumber}`);
+    otpStore.delete(identifier);
+    resetRateLimit(`otp:phone:${identifier}`);
     
-    logSecurityEvent({
-      type: SecurityEventType.OTP_FAILED,
-      timestamp: Date.now(),
-      identifier: phoneNumber,
-      details: { reason: 'otp_expired' },
-    });
-
     return NextResponse.json(
       {
         error: 'OTP expired. Please request a new OTP.',
@@ -360,18 +404,10 @@ async function handleVerifyOTP(
     );
   }
 
-  // Check if too many attempts
   if (storedData.attempts >= SECURITY_CONFIG.OTP_MAX_ATTEMPTS) {
-    otpStore.delete(phoneNumber);
-    resetRateLimit(`otp:${phoneNumber}`);
+    otpStore.delete(identifier);
+    resetRateLimit(`otp:phone:${identifier}`);
     
-    logSecurityEvent({
-      type: SecurityEventType.OTP_FAILED,
-      timestamp: Date.now(),
-      identifier: phoneNumber,
-      details: { reason: 'max_attempts_exceeded' },
-    });
-
     return NextResponse.json(
       {
         error: 'Maximum OTP attempts exceeded. Please request a new OTP.',
@@ -381,26 +417,12 @@ async function handleVerifyOTP(
     );
   }
 
-  // Verify OTP using constant-time comparison
   const isValid = verifyOTP(otp, storedData.hashedOTP);
-  
-  // Increment attempt counter
   storedData.attempts++;
   storedData.lastAttemptAt = Date.now();
-  otpStore.set(phoneNumber, storedData);
+  otpStore.set(identifier, storedData);
 
   if (!isValid) {
-    logSecurityEvent({
-      type: SecurityEventType.OTP_FAILED,
-      timestamp: Date.now(),
-      identifier: phoneNumber,
-      details: { 
-        reason: 'invalid_otp',
-        attempt: storedData.attempts,
-        maxAttempts: SECURITY_CONFIG.OTP_MAX_ATTEMPTS,
-      },
-    });
-
     const remainingAttempts = SECURITY_CONFIG.OTP_MAX_ATTEMPTS - storedData.attempts;
     
     return NextResponse.json(
@@ -413,17 +435,13 @@ async function handleVerifyOTP(
     );
   }
 
-  // OTP verified - clear OTP store
-  otpStore.delete(phoneNumber);
-  resetRateLimit(`otp:${phoneNumber}`);
+  // OTP verified
+  otpStore.delete(identifier);
+  resetRateLimit(`otp:phone:${identifier}`);
 
-  // Create or get user from database
-  const user = await createOrGetUser(phoneNumber);
-
-  // Generate session token
+  const user = await createOrGetUser(identifier);
   const { token, expiresAt } = generateSessionToken();
 
-  // Store session
   sessionStore.set(token, {
     userId: user.id,
     expiresAt,
@@ -433,7 +451,7 @@ async function handleVerifyOTP(
   logSecurityEvent({
     type: SecurityEventType.OTP_VERIFIED,
     timestamp: Date.now(),
-    identifier: phoneNumber,
+    identifier,
     details: { userId: user.id },
   });
 
@@ -442,11 +460,12 @@ async function handleVerifyOTP(
     user: {
       id: user.id,
       phoneNumber: user.phoneNumber,
+      email: user.email,
       name: user.name,
       avatar: user.avatar,
     },
     token,
-    expiresIn: SECURITY_CONFIG.TOKEN_EXPIRY_MS / 1000, // seconds
+    expiresIn: SECURITY_CONFIG.TOKEN_EXPIRY_MS / 1000,
   });
 }
 
@@ -454,51 +473,51 @@ async function handleVerifyOTP(
 // MAIN ROUTE HANDLER
 // ============================================================================
 
-/**
- * POST /api/auth/login - Handle OTP send and verification
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { phoneNumber, otp, action } = body;
+    const { phoneNumber, email, otp, action } = body;
 
-    // Validate required fields
-    if (!phoneNumber) {
+    // Handle OTP send
+    if (action === 'send') {
+      if (phoneNumber) {
+        const sanitizedPhone = sanitizeInput(phoneNumber);
+        
+        if (!validatePhoneNumber(sanitizedPhone)) {
+          return NextResponse.json(
+            {
+              error: 'Please enter a valid phone number',
+              code: SecurityErrorCodes.INVALID_PHONE_NUMBER,
+            },
+            { status: 400 }
+          );
+        }
+
+        const normalizedPhone = normalizePhoneNumber(sanitizedPhone);
+        return await handleSendPhoneOTP(normalizedPhone, request);
+      }
+
+      if (email) {
+        const sanitizedEmail = sanitizeInput(email);
+        
+        if (!validateEmail(sanitizedEmail)) {
+          return NextResponse.json(
+            { error: 'Please enter a valid email address' },
+            { status: 400 }
+          );
+        }
+
+        return await handleSendEmailOTP(sanitizedEmail, request);
+      }
+
       return NextResponse.json(
-        {
-          error: 'Phone number is required',
-          code: SecurityErrorCodes.INVALID_PHONE_NUMBER,
-        },
+        { error: 'Phone number or email is required' },
         { status: 400 }
       );
     }
 
-    // Sanitize and validate phone number
-    const sanitizedPhone = sanitizeInput(phoneNumber);
-    
-    if (!validatePhoneNumber(sanitizedPhone)) {
-      logSecurityEvent({
-        type: SecurityEventType.INVALID_INPUT,
-        timestamp: Date.now(),
-        identifier: sanitizedPhone,
-        details: { reason: 'invalid_phone_format' },
-      });
-
-      return NextResponse.json(
-        {
-          error: 'Please enter a valid phone number',
-          code: SecurityErrorCodes.INVALID_PHONE_NUMBER,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Normalize phone number
-    const normalizedPhone = normalizePhoneNumber(sanitizedPhone);
-
-    // Route to appropriate handler
+    // Handle OTP verify
     if (action === 'verify') {
-      // Validate OTP
       if (!otp) {
         return NextResponse.json(
           {
@@ -512,13 +531,6 @@ export async function POST(request: NextRequest) {
       const sanitizedOTP = sanitizeInput(otp);
       
       if (!validateOTP(sanitizedOTP)) {
-        logSecurityEvent({
-          type: SecurityEventType.INVALID_INPUT,
-          timestamp: Date.now(),
-          identifier: normalizedPhone,
-          details: { reason: 'invalid_otp_format' },
-        });
-
         return NextResponse.json(
           {
             error: 'Please enter a valid 6-digit OTP',
@@ -528,15 +540,62 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      return await handleVerifyOTP(normalizedPhone, sanitizedOTP, request);
-    } else {
-      // Default action: send OTP
-      return await handleSendOTP(normalizedPhone, request);
+      // Verify with phone
+      if (phoneNumber) {
+        const sanitizedPhone = sanitizeInput(phoneNumber);
+        if (!validatePhoneNumber(sanitizedPhone)) {
+          return NextResponse.json(
+            { error: 'Invalid phone number' },
+            { status: 400 }
+          );
+        }
+        const normalizedPhone = normalizePhoneNumber(sanitizedPhone);
+        return await handleVerifyOTP(normalizedPhone, sanitizedOTP, 'phone', request);
+      }
+
+      // Verify with email
+      if (email) {
+        const sanitizedEmail = sanitizeInput(email);
+        if (!validateEmail(sanitizedEmail)) {
+          return NextResponse.json(
+            { error: 'Invalid email address' },
+            { status: 400 }
+          );
+        }
+        return await handleVerifyOTP(sanitizedEmail, sanitizedOTP, 'email', request);
+      }
+
+      return NextResponse.json(
+        { error: 'Phone number or email is required for verification' },
+        { status: 400 }
+      );
     }
+
+    // Default: send OTP (backward compatibility)
+    if (phoneNumber) {
+      const sanitizedPhone = sanitizeInput(phoneNumber);
+      
+      if (!validatePhoneNumber(sanitizedPhone)) {
+        return NextResponse.json(
+          {
+            error: 'Please enter a valid phone number',
+            code: SecurityErrorCodes.INVALID_PHONE_NUMBER,
+          },
+          { status: 400 }
+        );
+      }
+
+      const normalizedPhone = normalizePhoneNumber(sanitizedPhone);
+      return await handleSendPhoneOTP(normalizedPhone, request);
+    }
+
+    return NextResponse.json(
+      { error: 'Phone number or email is required' },
+      { status: 400 }
+    );
   } catch (error) {
     console.error('Login error:', error);
 
-    // Handle security errors
     if (error instanceof SecurityError) {
       return NextResponse.json(
         formatSecurityError(error),
@@ -544,7 +603,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle unexpected errors
     logSecurityEvent({
       type: SecurityEventType.SUSPICIOUS_ACTIVITY,
       timestamp: Date.now(),
