@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
+import { useAuth } from "@/lib/auth-context";
 
 // Types
 interface Story {
@@ -37,8 +39,18 @@ const stories: Story[] = [];
 const posts: Post[] = [];
 
 export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
+
+  const handleLogin = () => {
+    router.push("/auth/login");
+  };
+
+  const handleRegister = () => {
+    router.push("/auth/login");
+  };
 
   const toggleLike = (postId: string) => {
     setLikedPosts((prev) => {
@@ -93,6 +105,41 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="md:ml-64 min-h-screen">
+        {/* Welcome Hero for Unauthenticated Users */}
+        {!isLoading && !isAuthenticated && (
+          <div className="bg-[var(--card)] border-b border-[var(--border)] py-12 px-4 md:px-6">
+            <div className="max-w-xl mx-auto text-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-[var(--foreground)] mb-4">
+                Welcome to Vellon
+              </h1>
+              <p className="text-[var(--muted-foreground)] mb-8">
+                Connect with friends, discover amazing products, and build your mini-store.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  onClick={handleLogin}
+                  className="px-8 py-3 text-base font-semibold"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  Login
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleRegister}
+                  className="px-8 py-3 text-base font-semibold"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  Register
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-2xl mx-auto">
           {/* Stories Section - Horizontal Scroll */}
           <section className="border-b border-[var(--border)] py-5 px-4 md:px-6">

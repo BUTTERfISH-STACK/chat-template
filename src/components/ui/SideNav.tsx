@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
 
 interface NavItem {
   label: string;
@@ -78,6 +80,23 @@ const defaultNavItems: NavItem[] = [
 
 export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/auth/login");
+  };
+
+  const getUserInitials = () => {
+    if (user?.name) {
+      return user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    }
+    if (user?.phoneNumber) {
+      return user.phoneNumber.slice(-2);
+    }
+    return "U";
+  };
 
   return (
     <aside
@@ -160,26 +179,67 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
         </ul>
       </div>
 
-      {/* User Profile */}
+      {/* User Profile / Auth Buttons */}
       <div className="border-t border-[var(--border)] p-4">
-        <Link
-          href="/profile"
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-            pathname === "/profile"
-              ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-              : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]"
-          )}
-        >
-          <div className="w-10 h-10 rounded-lg bg-[var(--secondary)] flex items-center justify-center flex-shrink-0 text-[var(--primary)] font-semibold text-sm border border-[var(--card-border)] shadow-sm group-hover:shadow transition-shadow">
-            JD
+        {isLoading ? (
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <div className="w-10 h-10 rounded-lg bg-[var(--secondary)] animate-pulse" />
+            <div className="flex-1">
+              <div className="h-4 w-20 bg-[var(--secondary)] rounded animate-pulse" />
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[var(--foreground)] truncate">John Doe</p>
-            <p className="text-xs text-[var(--muted-foreground)]">Online now</p>
+        ) : isAuthenticated && user ? (
+          <Link
+            href="/profile"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+              pathname === "/profile"
+                ? "bg-[var(--primary)]/10 text-[var(--primary)]"
+                : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]"
+            )}
+          >
+            <div className="w-10 h-10 rounded-lg bg-[var(--secondary)] flex items-center justify-center flex-shrink-0 text-[var(--primary)] font-semibold text-sm border border-[var(--card-border)] shadow-sm group-hover:shadow transition-shadow">
+              {getUserInitials()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[var(--foreground)] truncate">{user.name || "User"}</p>
+              <p className="text-xs text-[var(--muted-foreground)]">Online now</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+            >
+              Logout
+            </Button>
+          </Link>
+        ) : (
+          <div className="space-y-2">
+            <Link
+              href="/auth/login"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group bg-[var(--primary)]/10 text-[var(--primary)]"
+            >
+              <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/20 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              <span className="font-medium">Login</span>
+            </Link>
+            <Link
+              href="/auth/login"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]"
+            >
+              <div className="w-10 h-10 rounded-lg bg-[var(--secondary)] flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--secondary)]/80 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              </div>
+              <span className="font-medium">Register</span>
+            </Link>
           </div>
-          <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-green)] ring-2 ring-[var(--card)]" />
-        </Link>
+        )}
       </div>
     </aside>
   );
@@ -188,6 +248,23 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
 // Top Navigation Bar (for mobile) - Premium
 export function TopNavBar({ items = defaultNavItems }: SideNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/auth/login");
+  };
+
+  const getUserInitials = () => {
+    if (user?.name) {
+      return user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    }
+    if (user?.phoneNumber) {
+      return user.phoneNumber.slice(-2);
+    }
+    return "U";
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-[var(--card)]/80 backdrop-blur-lg border-b border-[var(--border)] z-50 flex items-center justify-between px-4 transition-all duration-300">
@@ -226,13 +303,37 @@ export function TopNavBar({ items = defaultNavItems }: SideNavProps) {
         })}
       </nav>
 
-      {/* User Avatar */}
-      <Link href="/profile" className="relative">
-        <div className="w-9 h-9 rounded-lg bg-[var(--secondary)] flex items-center justify-center text-[var(--primary)] font-semibold text-sm border border-[var(--card-border)] shadow-sm">
-          JD
+      {/* User Avatar / Auth */}
+      {isLoading ? (
+        <div className="w-9 h-9 rounded-lg bg-[var(--secondary)] animate-pulse" />
+      ) : isAuthenticated && user ? (
+        <div className="flex items-center gap-2">
+          <Link href="/profile" className="relative">
+            <div className="w-9 h-9 rounded-lg bg-[var(--secondary)] flex items-center justify-center text-[var(--primary)] font-semibold text-sm border border-[var(--card-border)] shadow-sm">
+              {getUserInitials()}
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[var(--accent-green)] ring-2 ring-[var(--card)]" />
+          </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="text-xs px-2"
+          >
+            Logout
+          </Button>
         </div>
-        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[var(--accent-green)] ring-2 ring-[var(--card)]" />
-      </Link>
+      ) : (
+        <Link
+          href="/auth/login"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+          </svg>
+          Login
+        </Link>
+      )}
     </header>
   );
 }
