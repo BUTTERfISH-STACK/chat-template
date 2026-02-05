@@ -971,6 +971,23 @@ Each code can only be used once.
     }
   };
 
+  // Handle avatar change
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        showToast("error", "File size must be less than 2MB");
+        return;
+      }
+
+      // Create object URL for preview and update user
+      const imageUrl = URL.createObjectURL(file);
+      updateUser({ avatar: imageUrl });
+      showToast("success", "Profile photo updated successfully!");
+    }
+  };
+
   // Handle input changes
   const handleInputChange = (field: keyof ProfileFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -1011,7 +1028,14 @@ Each code can only be used once.
                 </AvatarFallback>
               </Avatar>
               <div>
-                <Button variant="outline" size="sm">
+                <input
+                  type="file"
+                  id="avatar-input"
+                  accept="image/jpeg,image/png,image/gif"
+                  className="hidden"
+                  onChange={(e) => handleAvatarChange(e)}
+                />
+                <Button variant="outline" size="sm" onClick={() => document.getElementById("avatar-input")?.click()}>
                   Change Photo
                 </Button>
                 <p className="text-xs text-[var(--muted-foreground)] mt-1">
