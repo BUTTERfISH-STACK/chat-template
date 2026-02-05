@@ -17,6 +17,8 @@ export const users = sqliteTable('users', {
   email: text('email'),
   avatar: text('avatar'),
   bio: text('bio'),
+  password: text('password'),
+  authToken: text('auth_token'),
   isVerified: integer('is_verified', { mode: 'boolean' }).default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$onUpdateFn(() => new Date()),
