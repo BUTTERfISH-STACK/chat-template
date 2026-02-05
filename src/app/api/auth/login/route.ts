@@ -29,6 +29,51 @@ async function sendOTP(phoneNumber: string, otp: string): Promise<boolean> {
   return true;
 }
 
+// User interface for return type
+interface UserResult {
+  id: string;
+  phoneNumber: string;
+  name: string | null;
+  avatar: string | null;
+}
+
+// Create or get user from SQLite database
+async function createOrGetUser(phoneNumber: string): Promise<UserResult> {
+  const dbPath = process.env.DATABASE_PATH || './data/database.db';
+  const Database = (await import('better-sqlite3')).default;
+  const sqlite = new Database(dbPath);
+
+  // Check if user exists
+  const stmt = sqlite.prepare('SELECT * FROM users WHERE phone_number = ?');
+  const existingUser = stmt.get(phoneNumber) as { id: string; phone_number: string; name: string | null; avatar: string | null } | undefined;
+
+  if (existingUser) {
+    return {
+      id: existingUser.id,
+      phoneNumber: existingUser.phone_number,
+      name: existingUser.name,
+      avatar: existingUser.avatar,
+    };
+  }
+
+  // Create new user
+  const userId = generateId();
+  const now = Date.now();
+  const displayName = `User ${phoneNumber.slice(-4)}`;
+
+  sqlite.prepare(`
+    INSERT INTO users (id, phone_number, name, avatar, is_verified, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(userId, phoneNumber, displayName, null, 1, now, now);
+
+  return {
+    id: userId,
+    phoneNumber,
+    name: displayName,
+    avatar: null,
+  };
+}
+
 // POST /api/auth/login - Send OTP
 export async function POST(request: NextRequest) {
   try {
@@ -123,37 +168,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-// Create or get user from SQLite database
-async function createOrGetUser(phoneNumber: string) {
-  const dbPath = process.env.DATABASE_PATH || './data/database.db';
-  const Database = (await import('better-sqlite3')).default;
-  const sqlite = new Database(dbPath);
-
-  // Check if user exists
-  const existingUser = sqlite.prepare('SELECT * FROM users WHERE phone_number = ?').get(phoneNumber);
-
-  if (existingUser) {
-    return existingUser;
-  }
-
-  // Create new user
-  const userId = generateId();
-  const now = Date.now();
-
-  sqlite.prepare(`
-    INSERT INTO users (id, phone_number, name, avatar, is_verified, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(userId, phoneNumber, `User ${phoneNumber.slice(-4)}`, null, 1, now, now);
-
-  return {
-    id: userId,
-    phoneNumber,
-    name: `User ${phoneNumber.slice(-4)}`,
-    avatar: null,
-    isVerified: true,
-    createdAt: now,
-    updatedAt: now,
-  };
 }
