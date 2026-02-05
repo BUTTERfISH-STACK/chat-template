@@ -22,6 +22,9 @@ const sqlite = new Database(dbPath);
 // Create Drizzle instance with schema
 export const db = drizzle(sqlite, { schema });
 
+// Export raw sqlite driver for prepared statements
+export { sqlite };
+
 // Export schema for use in other files
 export * from './schema';
 
