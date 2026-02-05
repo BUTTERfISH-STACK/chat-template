@@ -1,52 +1,43 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key-change-in-production";
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 // List of public routes that don't require authentication
-const publicRoutes = ["/login", "/auth/login", "/auth/otp", "/api/auth/login", "/api/whatsapp"];
+const publicRoutes = ["/login", "/register", "/api/auth", "/api/auth/"]
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { nextUrl, cookies } = request
+  const pathname = nextUrl.pathname
 
-  // Check if the current route is a public route
-  const isPublicRoute = publicRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  // Check if the current route is public
+  const isPublicRoute = publicRoutes.some((route) => pathname === route || pathname.startsWith(route))
 
   // Get the auth token from cookies
-  const authToken = request.cookies.get("authToken");
+  const authToken = cookies.get("next-auth.session-token")?.value || 
+                    cookies.get("authToken")?.value
 
-  // If it's a public route, allow access
-  if (isPublicRoute) {
-    // If user is already authenticated and trying to access login/otp page, redirect to chat
-    if (authToken) {
-      try {
-        jwt.verify(authToken.value, JWT_SECRET);
-        return NextResponse.redirect(new URL("/chat", request.url));
-      } catch {
-        // Token is invalid, continue to login page
-      }
-    }
-    return NextResponse.next();
+  // Redirect to login if accessing protected route without authentication
+  if (!isPublicRoute && !authToken) {
+    return NextResponse.redirect(new URL("/login", nextUrl))
   }
 
-  // If it's a protected route and user is not authenticated, redirect to login
-  if (!authToken) {
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+  // Redirect to chat if already authenticated and trying to access login
+  if (pathname === "/login" && authToken) {
+    return NextResponse.redirect(new URL("/chat", nextUrl))
   }
 
-  try {
-    // Verify the token
-    jwt.verify(authToken.value, JWT_SECRET);
-    return NextResponse.next();
-  } catch {
-    // Token is invalid or expired
-    return NextResponse.redirect(new URL("/auth/login", request.url));
-  }
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-};
+  matcher: [
+    /*
+     * Match all request paths except for:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     * - api routes (auth)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+  ],
+}

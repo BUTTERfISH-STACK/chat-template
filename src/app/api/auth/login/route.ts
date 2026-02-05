@@ -1,88 +1,159 @@
-import { NextRequest, NextResponse } from "next/server";
-import { findUserByPhone, createUser } from "@/lib/user-store";
-import jwt from "jsonwebtoken";
+// Simple authentication API - Phone-based login with OTP verification
+// Uses local SQLite database for user storage
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key-change-in-production";
+import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
+// Generate a simple secure token
+function generateToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Generate user ID
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
+// Simple in-memory OTP storage (in production, use Redis)
+const otpStore = new Map<string, { otp: string; expiresAt: number }>();
+
+// Generate 6-digit OTP
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send OTP (simulated - in production, integrate with SMS service)
+async function sendOTP(phoneNumber: string, otp: string): Promise<boolean> {
+  console.log(`[SMS] OTP for ${phoneNumber}: ${otp}`);
+  // In production, integrate with Twilio, WhatsApp Business API, etc.
+  return true;
+}
+
+// POST /api/auth/login - Send OTP
 export async function POST(request: NextRequest) {
-  // Add CORS headers
-  const headers = new Headers();
-  headers.set("Access-Control-Allow-Origin", "*");
-  headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  headers.set("Access-Control-Allow-Headers", "Content-Type");
-
-  // Handle preflight OPTIONS request
-  if (request.method === "OPTIONS") {
-    return new NextResponse(null, { status: 204, headers });
-  }
-
   try {
-    console.log("Login attempt received");
-    console.log("JWT_SECRET:", JWT_SECRET ? "set" : "NOT SET");
+    const body = await request.json();
+    const { phoneNumber, action } = body;
 
-    const { phoneNumber } = await request.json();
-    console.log("Phone number:", phoneNumber);
-
-    // Validate phone number
-    const phoneRegex = /^[0-9+\-\s()]{10,}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      console.log("Invalid phone number format");
+    if (!phoneNumber) {
       return NextResponse.json(
-        { error: "Please enter a valid phone number" },
+        { error: 'Phone number is required' },
         { status: 400 }
       );
     }
 
-    // Find or create user
-    console.log("Looking up user...");
-    let user = await findUserByPhone(phoneNumber);
-    console.log("User lookup result:", user ? "found" : "not found");
+    // Normalize phone number
+    const normalizedPhone = phoneNumber.replace(/[^+\d]/g, '');
 
-    if (!user) {
-      console.log("Creating new user...");
-      user = await createUser(phoneNumber, "User");
-      console.log("User created:", user);
+    if (action === 'verify') {
+      // Verify OTP
+      const { otp } = body;
+      
+      if (!otp) {
+        return NextResponse.json(
+          { error: 'OTP is required' },
+          { status: 400 }
+        );
+      }
+
+      const storedData = otpStore.get(normalizedPhone);
+      
+      if (!storedData) {
+        return NextResponse.json(
+          { error: 'OTP not sent or expired. Please request a new OTP.' },
+          { status: 400 }
+        );
+      }
+
+      if (Date.now() > storedData.expiresAt) {
+        otpStore.delete(normalizedPhone);
+        return NextResponse.json(
+          { error: 'OTP expired. Please request a new OTP.' },
+          { status: 400 }
+        );
+      }
+
+      if (storedData.otp !== otp) {
+        return NextResponse.json(
+          { error: 'Invalid OTP' },
+          { status: 400 }
+        );
+      }
+
+      // OTP verified - clear OTP store
+      otpStore.delete(normalizedPhone);
+
+      // Create or get user from database
+      const user = await createOrGetUser(normalizedPhone);
+
+      // Generate session token
+      const token = generateToken();
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: user.id,
+          phoneNumber: user.phoneNumber,
+          name: user.name,
+          avatar: user.avatar,
+        },
+        token,
+      });
+    } else {
+      // Send OTP
+      const otp = generateOTP();
+      const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+      otpStore.set(normalizedPhone, { otp, expiresAt });
+
+      // Send OTP via SMS
+      await sendOTP(normalizedPhone, otp);
+
+      return NextResponse.json({
+        success: true,
+        message: 'OTP sent successfully',
+        // Only in development - remove in production
+        ...(process.env.NODE_ENV === 'development' && { debugOtp: otp }),
+      });
     }
-
-    // Generate JWT token
-    console.log("Generating JWT token...");
-    if (!JWT_SECRET) {
-      console.error("JWT_SECRET is not configured");
-      return NextResponse.json(
-        { error: "Server configuration error. Please try again later." },
-        { status: 500 }
-      );
-    }
-
-    const token = jwt.sign(
-      { userId: user.id, phoneNumber: user.phoneNumber },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-    console.log("JWT token generated successfully");
-
-    return NextResponse.json({
-      success: true,
-      token,
-      user: {
-        id: user.id,
-        phoneNumber: user.phoneNumber,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        bio: user.bio,
-        isVerified: user.isVerified,
-      },
-    }, { headers });
-  } catch (error: any) {
-    console.error("Login error details:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
+  } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json(
-      { error: "An error occurred during login. Please try again." },
-      { status: 500, headers }
+      { error: 'An error occurred during login. Please try again.' },
+      { status: 500 }
     );
   }
+}
+
+// Create or get user from SQLite database
+async function createOrGetUser(phoneNumber: string) {
+  const dbPath = process.env.DATABASE_PATH || './data/database.db';
+  const Database = (await import('better-sqlite3')).default;
+  const sqlite = new Database(dbPath);
+
+  // Check if user exists
+  const existingUser = sqlite.prepare('SELECT * FROM users WHERE phone_number = ?').get(phoneNumber);
+
+  if (existingUser) {
+    return existingUser;
+  }
+
+  // Create new user
+  const userId = generateId();
+  const now = Date.now();
+
+  sqlite.prepare(`
+    INSERT INTO users (id, phone_number, name, avatar, is_verified, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(userId, phoneNumber, `User ${phoneNumber.slice(-4)}`, null, 1, now, now);
+
+  return {
+    id: userId,
+    phoneNumber,
+    name: `User ${phoneNumber.slice(-4)}`,
+    avatar: null,
+    isVerified: true,
+    createdAt: now,
+    updatedAt: now,
+  };
 }

@@ -16,6 +16,7 @@ interface NavItem {
 interface SideNavProps {
   items?: NavItem[];
   className?: string;
+  onSignOut?: () => void;
 }
 
 const defaultNavItems: NavItem[] = [
@@ -81,11 +82,11 @@ const defaultNavItems: NavItem[] = [
 export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
-    router.push("/auth/login");
+    router.push("/login");
   };
 
   const getUserInitials = () => {
@@ -95,8 +96,13 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
     if (user?.phoneNumber) {
       return user.phoneNumber.slice(-2);
     }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
     return "U";
   };
+
+  const userName = user?.name || user?.phoneNumber || "User";
 
   return (
     <aside
@@ -188,9 +194,8 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
               <div className="h-4 w-20 bg-[var(--secondary)] rounded animate-pulse" />
             </div>
           </div>
-        ) : isAuthenticated && user ? (
-          <Link
-            href="/profile"
+        ) : isAuthenticated ? (
+          <div
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
               pathname === "/profile"
@@ -202,7 +207,7 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
               {getUserInitials()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--foreground)] truncate">{user.name || "User"}</p>
+              <p className="text-sm font-medium text-[var(--foreground)] truncate">{userName}</p>
               <p className="text-xs text-[var(--muted-foreground)]">Online now</p>
             </div>
             <Button
@@ -213,11 +218,11 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
             >
               Logout
             </Button>
-          </Link>
+          </div>
         ) : (
           <div className="space-y-2">
             <Link
-              href="/auth/login"
+              href="/login"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group bg-[var(--primary)]/10 text-[var(--primary)]"
             >
               <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/20 flex items-center justify-center flex-shrink-0">
@@ -228,7 +233,7 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
               <span className="font-medium">Login</span>
             </Link>
             <Link
-              href="/auth/login"
+              href="/login"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]"
             >
               <div className="w-10 h-10 rounded-lg bg-[var(--secondary)] flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--secondary)]/80 transition-colors">
@@ -249,11 +254,11 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
 export function TopNavBar({ items = defaultNavItems }: SideNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
-    router.push("/auth/login");
+    router.push("/login");
   };
 
   const getUserInitials = () => {
@@ -262,6 +267,9 @@ export function TopNavBar({ items = defaultNavItems }: SideNavProps) {
     }
     if (user?.phoneNumber) {
       return user.phoneNumber.slice(-2);
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
     }
     return "U";
   };
@@ -306,14 +314,14 @@ export function TopNavBar({ items = defaultNavItems }: SideNavProps) {
       {/* User Avatar / Auth */}
       {isLoading ? (
         <div className="w-9 h-9 rounded-lg bg-[var(--secondary)] animate-pulse" />
-      ) : isAuthenticated && user ? (
+      ) : isAuthenticated ? (
         <div className="flex items-center gap-2">
-          <Link href="/profile" className="relative">
+          <div className="relative">
             <div className="w-9 h-9 rounded-lg bg-[var(--secondary)] flex items-center justify-center text-[var(--primary)] font-semibold text-sm border border-[var(--card-border)] shadow-sm">
               {getUserInitials()}
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[var(--accent-green)] ring-2 ring-[var(--card)]" />
-          </Link>
+          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -325,7 +333,7 @@ export function TopNavBar({ items = defaultNavItems }: SideNavProps) {
         </div>
       ) : (
         <Link
-          href="/auth/login"
+          href="/login"
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-90 transition-opacity"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

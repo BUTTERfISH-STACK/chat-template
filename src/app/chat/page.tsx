@@ -1,74 +1,94 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { SideNav, TopNavBar } from "@/components/ui/SideNav";
-import { chatAPI } from "@/lib/api";
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth-context"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { SideNav, TopNavBar } from "@/components/ui/SideNav"
+import { chatAPI } from "@/lib/api"
 
 // Types for conversations (matching API response)
 interface Conversation {
-  id: string;
-  name?: string;
-  avatar?: string;
-  status?: string;
-  lastMessage: string;
-  timestamp: string;
-  unreadCount: number;
-  isOnline?: boolean;
-  isTyping?: boolean;
+  id: string
+  name?: string
+  avatar?: string
+  status?: string
+  lastMessage: string
+  timestamp: string
+  unreadCount: number
+  isOnline?: boolean
+  isTyping?: boolean
 }
 
 export default function ChatPage() {
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const router = useRouter()
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login")
+    }
+  }, [authLoading, isAuthenticated, router])
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
 
   // Fetch conversations from API
   useEffect(() => {
+    if (!isAuthenticated) return
+
     async function fetchConversations() {
       try {
-        const data = await chatAPI.getConversations();
-        setConversations(data as Conversation[]);
+        const data = await chatAPI.getConversations()
+        setConversations(data as Conversation[])
       } catch (err) {
-        setError("Failed to load conversations");
-        console.error(err);
+        setError("Failed to load conversations")
+        console.error(err)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
-    fetchConversations();
-  }, []);
+    fetchConversations()
+  }, [isAuthenticated])
 
   const filteredConversations = conversations.filter((conv) => {
-    const searchLower = searchQuery.toLowerCase();
+    const searchLower = searchQuery.toLowerCase()
     return (
       (conv.name?.toLowerCase().includes(searchLower) ?? false) ||
       conv.lastMessage.toLowerCase().includes(searchLower)
-    );
-  });
+    )
+  })
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
+    const date = new Date(timestamp)
+    const now = new Date()
+    const isToday = date.toDateString() === now.toDateString()
     
     if (isToday) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  };
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full"></div>
       </div>
-    );
+    )
   }
 
   return (
@@ -236,5 +256,5 @@ export default function ChatPage() {
       {/* Mobile bottom spacer */}
       <div className="h-20 md:hidden" />
     </div>
-  );
+  )
 }

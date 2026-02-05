@@ -11,6 +11,7 @@
     "otp:start": "OTP_PORT=3001 node server.js"
   },
   "dependencies": {
+    "@babel/runtime": "^7.28.6",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-slot": "^1.1.2",
     "@radix-ui/themes": "^3.3.0",
