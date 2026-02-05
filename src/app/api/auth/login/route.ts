@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { findUserByPhone, createUser } from "@/lib/user-store";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "default-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,20 +17,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find or create user - immediate login without OTP
+    // Find or create user
     let user = await findUserByPhone(phoneNumber);
 
     if (!user) {
       user = await createUser(phoneNumber, "User");
-      console.log(`New user registered: ${phoneNumber}`);
-    } else {
-      console.log(`User logged in: ${phoneNumber}`);
     }
 
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, phoneNumber: user.phoneNumber },
-      JWT_SECRET,
+      JWT_SECRET!,
       { expiresIn: "7d" }
     );
 
@@ -50,7 +47,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
-      { error: "Failed to login. Please try again." },
+      { error: "An error occurred during login. Please try again." },
       { status: 500 }
     );
   }

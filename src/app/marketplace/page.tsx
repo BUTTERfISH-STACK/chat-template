@@ -1,27 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
+import { marketplaceAPI } from "@/lib/api";
 
 // Types
 interface Product {
   id: string;
   name: string;
   price: number;
-  imageUrl: string;
-  aspectRatio: "square" | "portrait" | "landscape";
-  seller: {
-    username: string;
-    avatar: string;
-  };
+  image: string;
+  seller: string;
+  sellerId: string;
   category: string;
-  likes: number;
-  isLiked: boolean;
+  description: string;
+  stock: number;
+  createdAt: string;
+}
+
+interface Seller {
+  username: string;
+  avatar: string;
 }
 
 const categories = [
@@ -34,14 +38,38 @@ const categories = [
   { id: "art", label: "Art" },
 ];
 
-// Products data - populated from API
-const products: Product[] = [];
-
 export default function MarketplacePage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [likedProducts, setLikedProducts] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"masonry" | "grid">("masonry");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch products from API
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const params: { category?: string; search?: string } = {};
+        if (selectedCategory !== "all") {
+          params.category = selectedCategory;
+        }
+        if (searchQuery) {
+          params.search = searchQuery;
+        }
+        const data = await marketplaceAPI.getProducts(params);
+        setProducts(data);
+      } catch (err) {
+        setError("Failed to load products");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchProducts();
+  }, [selectedCategory, searchQuery]);
 
   const toggleLike = (productId: string) => {
     setLikedProducts((prev) => {
@@ -69,6 +97,14 @@ export default function MarketplacePage() {
         return "aspect-square";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -133,6 +169,8 @@ export default function MarketplacePage() {
                 <input
                   type="text"
                   placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="vellon-search-input"
                 />
               </div>
@@ -157,9 +195,16 @@ export default function MarketplacePage() {
             </div>
           </header>
 
+          {/* Error state */}
+          {error && (
+            <div className="p-4 m-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
           {/* Products Grid/Masonry */}
           <div className="p-4 md:p-6">
-            {filteredProducts.length === 0 ? (
+            {filteredProducts.length === 0 && !error ? (
               <div className="vellon-empty">
                 <div className="vellon-empty-icon">
                   <svg className="w-8 h-8 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +213,7 @@ export default function MarketplacePage() {
                 </div>
                 <p className="vellon-empty-title">No products found</p>
                 <p className="vellon-empty-description">
-                  Products will appear here when available.
+                  Try adjusting your search or filter to find what you're looking for.
                 </p>
               </div>
             ) : (
@@ -185,7 +230,7 @@ export default function MarketplacePage() {
                         <div
                           className={cn(
                             "bg-[var(--secondary)] relative overflow-hidden",
-                            getAspectRatioClass(product.aspectRatio)
+                            "aspect-square"
                           )}
                         >
                           {/* Placeholder for product image */}
@@ -240,14 +285,15 @@ export default function MarketplacePage() {
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-2">
                             <p className="text-lg font-semibold text-[var(--foreground)]">
-                              ${product.price}
+                              ${product.price.toFixed(2)}
                             </p>
                             <div className="flex items-center gap-1">
                               <svg className="w-4 h-4 fill-[var(--primary)] text-[var(--primary)]" viewBox="0 0 24 24">
                                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                               </svg>
                               <p className="text-sm text-[var(--muted-foreground)]">
-                                {product.likes}
+                                {likedProducts.has(product.id) ? 
+                                  (parseInt(likedProducts.size.toString()) + 1) : 0}
                               </p>
                             </div>
                           </div>
@@ -256,13 +302,12 @@ export default function MarketplacePage() {
                           </p>
                           <div className="flex items-center gap-2">
                             <Avatar className="w-6 h-6 rounded-lg">
-                              <AvatarImage src={product.seller.avatar} alt={product.seller.username} />
                               <AvatarFallback className="text-[10px]">
-                                {product.seller.username.charAt(0)}
+                                {product.seller.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <p className="text-sm text-[var(--muted-foreground)]">
-                              @{product.seller.username}
+                              @{product.seller}
                             </p>
                           </div>
                         </div>
@@ -317,12 +362,15 @@ export default function MarketplacePage() {
                         </div>
                         <div className="p-3">
                           <div className="flex items-center justify-between mb-1">
-                            <p className="font-semibold text-[var(--foreground)]">${product.price}</p>
+                            <p className="font-semibold text-[var(--foreground)]">${product.price.toFixed(2)}</p>
                             <div className="flex items-center gap-1">
                               <svg className="w-3 h-3 fill-[var(--primary)] text-[var(--primary)]" viewBox="0 0 24 24">
                                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                               </svg>
-                              <p className="text-xs text-[var(--muted-foreground)]">{product.likes}</p>
+                              <p className="text-xs text-[var(--muted-foreground)]">
+                                {likedProducts.has(product.id) ? 
+                                  (parseInt(likedProducts.size.toString()) + 1) : 0}
+                              </p>
                             </div>
                           </div>
                           <p className="text-xs text-[var(--muted-foreground)] truncate">{product.name}</p>
@@ -332,21 +380,6 @@ export default function MarketplacePage() {
                   </div>
                 )}
               </>
-            )}
-
-            {/* Empty state */}
-            {filteredProducts.length === 0 && (
-              <div className="vellon-empty">
-                <div className="vellon-empty-icon">
-                  <svg className="w-8 h-8 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                </div>
-                <p className="vellon-empty-title">No products found</p>
-                <p className="vellon-empty-description">
-                  Try adjusting your search or filter to find what you're looking for.
-                </p>
-              </div>
             )}
           </div>
         </div>

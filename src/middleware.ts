@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "default-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // List of public routes that don't require authentication
 const publicRoutes = ["/auth/login", "/auth/otp"];
@@ -23,9 +23,9 @@ export function middleware(request: NextRequest) {
     // If user is already authenticated and trying to access login/otp page, redirect to chat
     if (authToken) {
       try {
-        jwt.verify(authToken.value, JWT_SECRET);
+        jwt.verify(authToken.value, JWT_SECRET!);
         return NextResponse.redirect(new URL("/chat", request.url));
-      } catch (error) {
+      } catch {
         // Token is invalid, continue to login page
       }
     }
@@ -39,10 +39,9 @@ export function middleware(request: NextRequest) {
 
   try {
     // Verify the token
-    const decoded = jwt.verify(authToken.value, JWT_SECRET);
-    console.log("Decoded token:", decoded);
+    jwt.verify(authToken.value, JWT_SECRET!);
     return NextResponse.next();
-  } catch (error) {
+  } catch {
     // Token is invalid or expired
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }

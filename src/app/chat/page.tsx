@@ -1,56 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
+import { chatAPI } from "@/lib/api";
 
-// Types for conversations
+// Types for conversations (matching API response)
 interface Conversation {
   id: string;
-  phoneNumber: string;
   name?: string;
   avatar?: string;
+  status?: string;
   lastMessage: string;
   timestamp: string;
   unreadCount: number;
   isOnline?: boolean;
   isTyping?: boolean;
-  messages: Message[];
 }
-
-interface Message {
-  id: string;
-  content: string;
-  timestamp: string;
-  isOwn: boolean;
-  status: "sent" | "delivered" | "read";
-  type: "text" | "image" | "video" | "document";
-  mediaUrl?: string;
-}
-
-// Conversations data - populated from API
-const mockConversations: Conversation[] = [];
 
 export default function ChatPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Fetch conversations from API
+  useEffect(() => {
+    async function fetchConversations() {
+      try {
+        const data = await chatAPI.getConversations();
+        setConversations(data as Conversation[]);
+      } catch (err) {
+        setError("Failed to load conversations");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchConversations();
+  }, []);
 
   const filteredConversations = conversations.filter((conv) => {
     const searchLower = searchQuery.toLowerCase();
     return (
       (conv.name?.toLowerCase().includes(searchLower) ?? false) ||
-      conv.phoneNumber.includes(searchLower) ||
       conv.lastMessage.toLowerCase().includes(searchLower)
     );
   });
 
   const formatTimestamp = (timestamp: string) => {
-    return timestamp;
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    if (isToday) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -114,6 +133,13 @@ export default function ChatPage() {
             </div>
           </header>
 
+          {/* Error state */}
+          {error && (
+            <div className="p-4 m-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
           {/* Conversations List */}
           <div className="divide-y divide-[var(--border)]">
             {filteredConversations.map((conversation, index) => (
@@ -126,9 +152,9 @@ export default function ChatPage() {
                 {/* Avatar with online indicator */}
                 <div className="relative flex-shrink-0">
                   <Avatar className="w-14 h-14 rounded-lg">
-                    <AvatarImage src={conversation.avatar} alt={conversation.name || conversation.phoneNumber} />
+                    <AvatarImage src={conversation.avatar} alt={conversation.name || 'Unknown'} />
                     <AvatarFallback className="font-medium">
-                      {(conversation.name || conversation.phoneNumber).charAt(0).toUpperCase()}
+                      {(conversation.name || 'U').charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   {conversation.isOnline && (
@@ -141,7 +167,7 @@ export default function ChatPage() {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2 min-w-0">
                       <p className="font-semibold text-sm truncate text-[var(--foreground)]">
-                        {conversation.name || conversation.phoneNumber}
+                        {conversation.name || 'Unknown'}
                       </p>
                       {conversation.isTyping && (
                         <span className="text-xs text-[var(--primary)] animate-pulse-soft">
@@ -173,7 +199,7 @@ export default function ChatPage() {
                     >
                       {conversation.lastMessage}
                     </p>
-                    {conversation.unreadCount === 0 && conversation.messages.some(m => !m.isOwn && m.status === "read") && (
+                    {conversation.unreadCount === 0 && (
                       <svg className="w-4 h-4 text-[var(--primary)] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z" />
                       </svg>
@@ -185,7 +211,7 @@ export default function ChatPage() {
           </div>
 
           {/* Empty state */}
-          {filteredConversations.length === 0 && (
+          {filteredConversations.length === 0 && !error && (
             <div className="vellon-empty">
               <div className="vellon-empty-icon">
                 <svg className="w-8 h-8 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

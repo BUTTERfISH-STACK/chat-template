@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState("+1234567890"); // Pre-filled for testing
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,12 +41,11 @@ export default function LoginPage() {
       sessionStorage.setItem("user", JSON.stringify(data.user));
       
       // Set cookie for middleware access
-      document.cookie = `authToken=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+      document.cookie = `authToken=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
       
       // Navigate to chat page
       router.push("/chat");
     } catch (err) {
-      console.error("Login error:", err);
       setError(err instanceof Error ? err.message : "Failed to login. Please try again.");
     } finally {
       setIsLoading(false);
@@ -75,6 +74,7 @@ export default function LoginPage() {
               onChange={handleInputChange}
               className="w-full"
               disabled={isLoading}
+              required
             />
           </div>
 
@@ -94,10 +94,6 @@ export default function LoginPage() {
             ) : null}
             Login / Register
           </Button>
-          
-          <p className="text-xs text-gray-500 text-center">
-            Phone number length: {phoneNumber.length}
-          </p>
         </form>
       </div>
     </div>

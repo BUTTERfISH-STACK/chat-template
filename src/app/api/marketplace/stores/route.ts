@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockDb, generateId } from '@/lib/db';
+import prisma from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 // Helper to verify JWT and get user
 async function getUserFromToken(request: NextRequest) {
@@ -14,44 +14,14 @@ async function getUserFromToken(request: NextRequest) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    const user = Array.from(mockDb.users.values()).find((u: any) => u.id === decoded.userId);
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
     return user;
   } catch {
     return null;
   }
 }
-
-// Mock stores data
-const mockStores = [
-  {
-    id: 's1',
-    name: 'TechStore',
-    description: 'Your one-stop shop for premium electronics',
-    ownerId: 'u1',
-    logo: null,
-    phone: '+27 82 123 4567',
-    email: 'contact@techstore.com',
-    address: '123 Tech Street, Johannesburg',
-    rating: 4.8,
-    totalSales: 1250,
-    productCount: 45,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 's2',
-    name: 'LuxuryLeather',
-    description: 'Handcrafted leather goods of premium quality',
-    ownerId: 'u2',
-    logo: null,
-    phone: '+27 83 987 6543',
-    email: 'info@luxuryleather.com',
-    address: '456 Artisan Avenue, Cape Town',
-    rating: 4.9,
-    totalSales: 890,
-    productCount: 32,
-    createdAt: new Date().toISOString(),
-  },
-];
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,34 +29,65 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const userId = searchParams.get('userId');
 
-    let stores = [...mockStores];
-
-    // Also include stores from mockDb
-    const dbStores = Array.from(mockDb.stores.values());
-    if (dbStores.length > 0) {
-      stores = [...stores, ...dbStores];
-    }
+    // Build where clause
+    const where: any = {
+      isActive: true,
+    };
 
     if (userId) {
-      stores = stores.filter((s: any) => s.ownerId === userId);
+      where.ownerId = userId;
     }
 
     if (search) {
-      const lowerSearch = search.toLowerCase();
-      stores = stores.filter((s: any) =>
-        s.name.toLowerCase().includes(lowerSearch) ||
-        s.description?.toLowerCase().includes(lowerSearch)
-      );
+      where.OR = [
+        { name: { contains: search } },
+        { description: { contains: search } },
+      ];
     }
+
+    // Get stores from Prisma
+    const stores = await prisma.store.findMany({
+      where,
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+          },
+        },
+        _count: {
+          select: {
+            products: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const formattedStores = stores.map((store) => ({
+      id: store.id,
+      name: store.name,
+      description: store.description,
+      ownerId: store.ownerId,
+      logo: store.logo,
+      phone: store.phone,
+      email: store.email,
+      address: store.address,
+      rating: store.rating,
+      totalSales: store.totalSales,
+      productCount: store._count.products,
+      createdAt: store.createdAt.toISOString(),
+    }));
 
     return NextResponse.json({
       success: true,
-      stores,
+      stores: formattedStores,
     });
   } catch (error) {
     console.error('Error fetching stores:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to fetch stores' },
       { status: 500 }
     );
   }
@@ -112,9 +113,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a store
-    const existingStore = Array.from(mockDb.stores.values()).find(
-      (s: any) => s.ownerId === user.id
-    );
+    const existingStore = await prisma.store.findFirst({
+      where: { ownerId: user.id },
+    });
 
     if (existingStore) {
       return NextResponse.json(
@@ -123,32 +124,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const store = {
-      id: generateId(),
-      name,
-      description,
-      logo,
-      phone,
-      email,
-      address,
-      ownerId: user.id,
-      rating: 0,
-      totalSales: 0,
-      productCount: 0,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    mockDb.stores.set(store.id, store);
+    // Create store with Prisma
+    const store = await prisma.store.create({
+      data: {
+        name,
+        description,
+        logo,
+        phone,
+        email,
+        address,
+        ownerId: user.id,
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      store,
+      store: {
+        id: store.id,
+        name: store.name,
+        description: store.description,
+        ownerId: store.ownerId,
+        logo: store.logo,
+        phone: store.phone,
+        email: store.email,
+        address: store.address,
+        rating: store.rating,
+        totalSales: store.totalSales,
+        productCount: 0,
+        createdAt: store.createdAt.toISOString(),
+      },
     });
   } catch (error) {
     console.error('Error creating store:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to create store' },
       { status: 500 }
     );
   }

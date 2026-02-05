@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockDb, generateId } from '@/lib/db';
+import prisma from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 // Helper to verify JWT and get user
 async function getUserFromToken(request: NextRequest) {
@@ -14,7 +14,9 @@ async function getUserFromToken(request: NextRequest) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    const user = Array.from(mockDb.users.values()).find((u: any) => u.id === decoded.userId);
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
     return user;
   } catch {
     return null;
@@ -42,34 +44,46 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user is participant
-    const participants = Array.from(mockDb.conversationParticipants.values());
-    const isParticipant = participants.some(
-      (p: any) => p.conversationId === conversationId && p.userId === user.id
-    );
+    const participation = await prisma.conversationParticipant.findUnique({
+      where: {
+        userId_conversationId: {
+          userId: user.id,
+          conversationId,
+        },
+      },
+    });
 
-    if (!isParticipant) {
+    if (!participation) {
       return NextResponse.json(
         { success: false, error: 'Not a participant in this conversation' },
         { status: 403 }
       );
     }
 
-    const messages = Array.from(mockDb.messages.values())
-      .filter((m: any) => m.conversationId === conversationId)
-      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
-    const formattedMessages = messages.map((msg: any) => {
-      const sender = Array.from(mockDb.users.values()).find((u: any) => u.id === msg.senderId);
-      return {
-        id: msg.id,
-        chatId: msg.conversationId,
-        author: sender?.name || 'Unknown',
-        content: msg.content,
-        timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isOwnMessage: msg.senderId === user.id,
-        status: msg.isRead ? 'read' : 'sent',
-      };
+    // Get messages from Prisma
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
     });
+
+    const formattedMessages = messages.map((msg) => ({
+      id: msg.id,
+      chatId: msg.conversationId,
+      author: msg.sender.name || 'Unknown',
+      content: msg.content,
+      timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isOwnMessage: msg.senderId === user.id,
+      status: msg.isRead ? 'read' : 'sent',
+    }));
 
     return NextResponse.json({
       success: true,
@@ -78,7 +92,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching messages:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to fetch messages' },
       { status: 500 }
     );
   }
@@ -105,44 +119,42 @@ export async function POST(request: NextRequest) {
 
     let targetConversationId = conversationId;
 
+    // If no conversation ID but receiver ID provided, find or create conversation
     if (!conversationId && receiverId) {
-      // Direct message - find or create conversation
-      const existingConvs = Array.from(mockDb.conversations.values());
-      let conversation = existingConvs.find((conv: any) => {
-        const participants = Array.from(mockDb.conversationParticipants.values())
-          .filter((p: any) => p.conversationId === conv.id);
-        const participantIds = participants.map((p: any) => p.userId);
-        return participantIds.includes(user.id) && participantIds.includes(receiverId);
+      const existingConv = await prisma.conversation.findFirst({
+        where: {
+          type: 'DIRECT',
+          participants: {
+            some: {
+              userId: user.id,
+            },
+          },
+        },
+        include: {
+          participants: {
+            where: {
+              userId: receiverId,
+            },
+          },
+        },
       });
 
-      if (!conversation) {
-        conversation = {
-          id: generateId(),
-          name: null,
-          type: 'DIRECT',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        mockDb.conversations.set(conversation.id, conversation);
-
-        mockDb.conversationParticipants.set(generateId(), {
-          id: generateId(),
-          userId: user.id,
-          conversationId: conversation.id,
-          joinedAt: new Date(),
-          lastReadAt: null,
+      if (existingConv) {
+        targetConversationId = existingConv.id;
+      } else {
+        const newConv = await prisma.conversation.create({
+          data: {
+            type: 'DIRECT',
+            participants: {
+              create: [
+                { userId: user.id },
+                { userId: receiverId },
+              ],
+            },
+          },
         });
-
-        mockDb.conversationParticipants.set(generateId(), {
-          id: generateId(),
-          userId: receiverId,
-          conversationId: conversation.id,
-          joinedAt: new Date(),
-          lastReadAt: null,
-        });
+        targetConversationId = newConv.id;
       }
-
-      targetConversationId = conversation.id;
     } else if (!conversationId && !receiverId) {
       return NextResponse.json(
         { success: false, error: 'Either conversationId or receiverId is required' },
@@ -150,14 +162,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user is participant
+    // Verify user is participant if conversation exists
     if (targetConversationId) {
-      const participants = Array.from(mockDb.conversationParticipants.values());
-      const isParticipant = participants.some(
-        (p: any) => p.conversationId === targetConversationId && p.userId === user.id
-      );
+      const participation = await prisma.conversationParticipant.findUnique({
+        where: {
+          userId_conversationId: {
+            userId: user.id,
+            conversationId: targetConversationId,
+          },
+        },
+      });
 
-      if (!isParticipant) {
+      if (!participation) {
         return NextResponse.json(
           { success: false, error: 'Not a participant in this conversation' },
           { status: 403 }
@@ -165,35 +181,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const message = {
-      id: generateId(),
-      content,
-      type: 'TEXT',
-      mediaUrl: null,
-      senderId: user.id,
-      receiverId: receiverId || null,
-      conversationId: targetConversationId,
-      isRead: false,
-      createdAt: new Date(),
-    };
-
-    mockDb.messages.set(message.id, message);
+    // Create message with Prisma
+    const message = await prisma.message.create({
+      data: {
+        content,
+        type: 'TEXT',
+        senderId: user.id,
+        conversationId: targetConversationId,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
 
     // Update conversation timestamp
-    if (targetConversationId) {
-      const conv = mockDb.conversations.get(targetConversationId);
-      if (conv) {
-        conv.updatedAt = new Date();
-        mockDb.conversations.set(targetConversationId, conv);
-      }
-    }
+    await prisma.conversation.update({
+      where: { id: targetConversationId },
+      data: { updatedAt: new Date() },
+    });
 
     return NextResponse.json({
       success: true,
       message: {
         id: message.id,
         chatId: message.conversationId,
-        author: user.name || 'Unknown',
+        author: message.sender.name || 'Unknown',
         content: message.content,
         timestamp: new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isOwnMessage: true,
@@ -203,7 +220,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error sending message:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: 'Failed to send message' },
       { status: 500 }
     );
   }

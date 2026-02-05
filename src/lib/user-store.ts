@@ -12,7 +12,7 @@ export function generateId(): string {
 
 // User operations using Prisma
 export async function createUser(phoneNumber: string, name: string = "User"): Promise<User> {
-  const user = await prisma.user.create({
+  return prisma.user.create({
     data: {
       id: generateId(),
       phoneNumber,
@@ -20,8 +20,6 @@ export async function createUser(phoneNumber: string, name: string = "User"): Pr
       isVerified: true,
     },
   });
-  console.log(`User created: ${phoneNumber}`);
-  return user;
 }
 
 export async function findUserByPhone(phoneNumber: string): Promise<User | null> {
@@ -43,12 +41,7 @@ export async function updateUser(id: string, data: Partial<User>): Promise<User 
   });
 }
 
-// Get all users (for debugging)
+// Get all users (for admin purposes)
 export async function getAllUsers(): Promise<User[]> {
   return prisma.user.findMany();
-}
-
-// Clear all data (for testing)
-export async function clearAllData(): Promise<void> {
-  await prisma.user.deleteMany();
 }
