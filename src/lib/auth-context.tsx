@@ -20,6 +20,7 @@ export interface User {
   name?: string | null;
   email?: string | null;
   image?: string | null;
+  avatar?: string;
   phoneNumber?: string;
   provider?: string;
 }
@@ -56,6 +57,7 @@ function AuthContextProvider({ children }: { children: ReactNode }) {
         name: session.user.name,
         email: session.user.email,
         image: session.user.image,
+        avatar: session.user.image || undefined,
         phoneNumber: (session.user as any).phoneNumber,
         provider: (session.user as any).provider,
       });
