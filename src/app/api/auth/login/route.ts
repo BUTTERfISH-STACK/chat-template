@@ -5,6 +5,17 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key-change-in-production";
 
 export async function POST(request: NextRequest) {
+  // Add CORS headers
+  const headers = new Headers();
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  headers.set("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight OPTIONS request
+  if (request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 204, headers });
+  }
+
   try {
     console.log("Login attempt received");
     console.log("JWT_SECRET:", JWT_SECRET ? "set" : "NOT SET");
@@ -62,7 +73,7 @@ export async function POST(request: NextRequest) {
         bio: user.bio,
         isVerified: user.isVerified,
       },
-    });
+    }, { headers });
   } catch (error: any) {
     console.error("Login error details:", {
       message: error.message,
@@ -71,7 +82,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(
       { error: "An error occurred during login. Please try again." },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }

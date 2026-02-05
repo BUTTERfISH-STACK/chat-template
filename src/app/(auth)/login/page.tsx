@@ -28,22 +28,28 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      console.log("Submitting login request...");
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber }),
       });
 
+      console.log("Response status:", response.status);
+      
       const data = await response.json();
+      console.log("Response data:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to login");
       }
 
       // Login with phone number - immediate access
+      console.log("Login successful, calling login function...");
       login(phoneNumber, data.token, data.user);
       
       // Navigate to chat page
+      console.log("Redirecting to /chat...");
       router.push("/chat");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to login. Please try again.");
