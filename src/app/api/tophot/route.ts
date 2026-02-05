@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { mockDb } from "@/lib/db";
 
 // Types for Top Hot data
 export interface TopHotUser {
@@ -12,7 +11,7 @@ export interface TopHotUser {
   verified: boolean;
   isAdminFeatured: boolean;
   pinnedRank: number | null;
-  
+   
   // Real metrics (from database)
   followerCount: number;
   totalBookings: number;
@@ -27,22 +26,22 @@ export interface TopHotUser {
   contentLikes: number;
   contentComments: number;
   contentShares: number;
-  
+   
   // Computed ranking score
   rankingScore: number;
   currentRank: number;
-  
+   
   // Store info (if applicable)
   storeName?: string;
   storeId?: string;
   storeRating?: number;
   storeProductCount?: number;
-  
+   
   // Badges (based on real criteria)
   badges: string[];
-  
+   
   // CTA
- ctaType: "book" | "shop" | "visit" | "follow";
+  ctaType: "book" | "shop" | "visit" | "follow";
 }
 
 // Badge definitions with real criteria
@@ -93,7 +92,7 @@ const BADGE_DEFINITIONS = {
 // Calculate ranking score based on real metrics
 function calculateRankingScore(user: TopHotUser): number {
   let score = 0;
-  
+   
   // Weighted scoring based on engagement signals
   score += user.followerCount * 0.5;           // Followers weighted less
   score += user.totalBookings * 10;              // Bookings important
@@ -102,23 +101,23 @@ function calculateRankingScore(user: TopHotUser): number {
   score += user.salesLast30Days * 1.5;           // Recent sales
   score += user.revenueLast30Days * 0.01;        // Revenue consideration
   score += user.profileVisits * 0.1;             // Traffic
-  score += user.contentLikes * 0.2;               // Content engagement
-  score += user.contentComments * 0.5;            // Comments weighted higher
-  score += user.contentShares * 1;                // Shares weighted highest
-  
+  score += user.contentLikes * 0.2;              // Content engagement
+  score += user.contentComments * 0.5;           // Comments weighted higher
+  score += user.contentShares * 1;                 // Shares weighted highest
+   
   return Math.round(score);
 }
 
 // Get badges for a user based on real criteria
 function getBadges(user: TopHotUser): string[] {
   const badges: string[] = [];
-  
+   
   for (const [key, definition] of Object.entries(BADGE_DEFINITIONS)) {
     if (definition.criteria(user)) {
       badges.push(key);
     }
   }
-  
+   
   return badges;
 }
 
@@ -135,7 +134,7 @@ function generateMockData(): TopHotUser[] {
       verified: true,
       isAdminFeatured: true,
       pinnedRank: 1,
-      
+       
       // Real metrics (from database)
       followerCount: 45200,
       totalBookings: 892,
@@ -150,10 +149,10 @@ function generateMockData(): TopHotUser[] {
       contentLikes: 89000,
       contentComments: 4500,
       contentShares: 2300,
-      
+       
       rankingScore: 0,
       currentRank: 0,
-      
+       
       badges: [],
       ctaType: "book",
     },
@@ -167,7 +166,7 @@ function generateMockData(): TopHotUser[] {
       verified: true,
       isAdminFeatured: false,
       pinnedRank: null,
-      
+       
       followerCount: 32100,
       totalBookings: 567,
       bookingsLast7Days: 15,
@@ -181,15 +180,15 @@ function generateMockData(): TopHotUser[] {
       contentLikes: 67000,
       contentComments: 3200,
       contentShares: 1800,
-      
+       
       rankingScore: 0,
       currentRank: 0,
-      
+       
       storeName: "Mike's Photography",
       storeId: "store_1",
       storeRating: 4.9,
       storeProductCount: 15,
-      
+       
       badges: [],
       ctaType: "shop",
     },
@@ -203,7 +202,7 @@ function generateMockData(): TopHotUser[] {
       verified: false,
       isAdminFeatured: false,
       pinnedRank: null,
-      
+       
       followerCount: 28900,
       totalBookings: 445,
       bookingsLast7Days: 18,
@@ -217,10 +216,10 @@ function generateMockData(): TopHotUser[] {
       contentLikes: 78000,
       contentComments: 5600,
       contentShares: 3400,
-      
+       
       rankingScore: 0,
       currentRank: 0,
-      
+       
       badges: [],
       ctaType: "book",
     },
@@ -234,7 +233,7 @@ function generateMockData(): TopHotUser[] {
       verified: true,
       isAdminFeatured: false,
       pinnedRank: null,
-      
+       
       followerCount: 15600,
       totalBookings: 0,
       bookingsLast7Days: 0,
@@ -248,15 +247,15 @@ function generateMockData(): TopHotUser[] {
       contentLikes: 23000,
       contentComments: 890,
       contentShares: 1200,
-      
+       
       storeName: "Wilson Woodworks",
       storeId: "store_2",
       storeRating: 4.8,
       storeProductCount: 42,
-      
+       
       rankingScore: 0,
       currentRank: 0,
-      
+       
       badges: [],
       ctaType: "shop",
     },
@@ -270,7 +269,7 @@ function generateMockData(): TopHotUser[] {
       verified: true,
       isAdminFeatured: false,
       pinnedRank: null,
-      
+       
       followerCount: 52300,
       totalBookings: 1234,
       bookingsLast7Days: 34,
@@ -284,10 +283,10 @@ function generateMockData(): TopHotUser[] {
       contentLikes: 125000,
       contentComments: 7800,
       contentShares: 4500,
-      
+       
       rankingScore: 0,
       currentRank: 0,
-      
+       
       badges: [],
       ctaType: "book",
     },
@@ -301,7 +300,7 @@ function generateMockData(): TopHotUser[] {
       verified: false,
       isAdminFeatured: false,
       pinnedRank: null,
-      
+       
       followerCount: 18700,
       totalBookings: 234,
       bookingsLast7Days: 8,
@@ -315,15 +314,15 @@ function generateMockData(): TopHotUser[] {
       contentLikes: 34000,
       contentComments: 2100,
       contentShares: 890,
-      
+       
       rankingScore: 0,
       currentRank: 0,
-      
+       
       storeName: "Studio K Beats",
       storeId: "store_3",
       storeRating: 4.7,
       storeProductCount: 23,
-      
+       
       badges: [],
       ctaType: "shop",
     },
@@ -337,7 +336,7 @@ function generateMockData(): TopHotUser[] {
       verified: true,
       isAdminFeatured: false,
       pinnedRank: null,
-      
+       
       followerCount: 8900,
       totalBookings: 567,
       bookingsLast7Days: 12,
@@ -351,10 +350,10 @@ function generateMockData(): TopHotUser[] {
       contentLikes: 12000,
       contentComments: 560,
       contentShares: 340,
-      
+       
       rankingScore: 0,
       currentRank: 0,
-      
+       
       badges: [],
       ctaType: "book",
     },
@@ -368,7 +367,7 @@ function generateMockData(): TopHotUser[] {
       verified: false,
       isAdminFeatured: false,
       pinnedRank: null,
-      
+       
       followerCount: 6700,
       totalBookings: 0,
       bookingsLast7Days: 0,
@@ -382,34 +381,34 @@ function generateMockData(): TopHotUser[] {
       contentLikes: 8900,
       contentComments: 340,
       contentShares: 560,
-      
+       
       storeName: "Alex's Kitchen",
       storeId: "store_4",
       storeRating: 4.6,
       storeProductCount: 67,
-      
+       
       rankingScore: 0,
       currentRank: 0,
-      
+       
       badges: [],
       ctaType: "shop",
     },
   ];
-  
+   
   // Calculate scores and assign ranks
   users.forEach(user => {
     user.rankingScore = calculateRankingScore(user);
     user.badges = getBadges(user);
   });
-  
+   
   // Sort by ranking score (descending)
   users.sort((a, b) => b.rankingScore - a.rankingScore);
-  
+   
   // Assign ranks
   users.forEach((user, index) => {
     user.currentRank = index + 1;
   });
-  
+   
   // Apply admin featured/pinned adjustments
   // Admin can pin a user to a specific rank, but we still show real scores
   const pinnedUsers = users.filter(u => u.isAdminFeatured && u.pinnedRank !== null);
@@ -422,13 +421,13 @@ function generateMockData(): TopHotUser[] {
     // Insert at pinned position (adjusting for 0-indexed)
     const insertIndex = Math.min(Math.max((pinnedUser.pinnedRank || 1) - 1, 0), users.length);
     users.splice(insertIndex, 0, pinnedUser);
-    
+     
     // Recalculate ranks after adjustment
     users.forEach((u, i) => {
       u.currentRank = i + 1;
     });
   });
-  
+   
   return users;
 }
 
@@ -441,15 +440,15 @@ export async function GET() {
     // - store_orders table for sales data
     // - transactions table for revenue
     // - engagement_logs for content engagement
-    
+     
     // For now, use mock data that simulates real metrics
     const users = generateMockData();
-    
+     
     // Separate into ranking tiers
     const featured = users[0]; // #1
     const secondary = users.slice(1, 5); // #2-5
     const trending = users.slice(5); // #6+
-    
+     
     return NextResponse.json({
       success: true,
       data: {

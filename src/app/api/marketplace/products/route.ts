@@ -1,11 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db';
+import db from '@/lib/db';
+import { products, stores, users } from '@/lib/db/schema';
 import jwt from 'jsonwebtoken';
+import { eq, desc, like, or } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
+// Types
+interface StoreType {
+  id: string;
+  name: string;
+  description: string | null;
+  logo: string | null;
+  phone: string;
+  email: string;
+  address: string | null;
+  ownerId: string;
+  rating: number;
+  totalSales: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ProductType {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image: string | null;
+  category: string;
+  stock: number;
+  storeId: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface UserType {
+  id: string;
+  phoneNumber: string;
+  name: string | null;
+  avatar: string | null;
+  email: string | null;
+  bio: string | null;
+  isVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Helper to verify JWT and get user
-async function getUserFromToken(request: NextRequest) {
+async function getUserFromToken(request: NextRequest): Promise<UserType | null> {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -14,10 +59,12 @@ async function getUserFromToken(request: NextRequest) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
-    return user;
+    const user = db.select()
+      .from(users)
+      .where(eq(users.id, decoded.userId))
+      .limit(1)
+      .get() as UserType | undefined;
+    return user || null;
   } catch {
     return null;
   }
@@ -30,55 +77,59 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const storeId = searchParams.get('storeId');
 
-    // Build where clause
-    const where: any = {
-      isActive: true,
-    };
+    // Get all products
+    const allProducts = db.select()
+      .from(products)
+      .where(eq(products.isActive, true))
+      .orderBy(desc(products.createdAt))
+      .all() as ProductType[];
 
+    // Get all stores for lookup
+    const allStores = db.select()
+      .from(stores)
+      .all() as StoreType[];
+    const storeMap = new Map<string, StoreType>(allStores.map((s: StoreType) => [s.id, s]));
+
+    let filteredProducts = allProducts;
+
+    // Filter by category
     if (category) {
-      where.category = category;
+      filteredProducts = filteredProducts.filter((p: ProductType) => 
+        p.category === category
+      );
     }
 
+    // Filter by storeId
     if (storeId) {
-      where.storeId = storeId;
+      filteredProducts = filteredProducts.filter((p: ProductType) => 
+        p.storeId === storeId
+      );
     }
 
+    // Filter by search
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { description: { contains: search } },
-        { store: { name: { contains: search } } },
-      ];
+      const searchLower = search.toLowerCase();
+      filteredProducts = filteredProducts.filter((p: ProductType) => 
+        p.name.toLowerCase().includes(searchLower) ||
+        (p.description && p.description.toLowerCase().includes(searchLower))
+      );
     }
 
-    // Get products from Prisma
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        store: {
-          select: {
-            id: true,
-            name: true,
-            logo: true,
-            rating: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+    const formattedProducts = filteredProducts.map((p: ProductType) => {
+      const store = storeMap.get(p.storeId);
+      return {
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        image: p.image,
+        seller: store?.name || 'Unknown',
+        sellerId: p.storeId,
+        category: p.category,
+        description: p.description,
+        stock: p.stock,
+        createdAt: p.createdAt,
+      };
     });
-
-    const formattedProducts = products.map((product) => ({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      seller: product.store.name,
-      sellerId: product.store.id,
-      category: product.category,
-      description: product.description,
-      stock: product.stock,
-      createdAt: product.createdAt.toISOString(),
-    }));
 
     return NextResponse.json({
       success: true,
@@ -113,37 +164,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user owns the store
-    const store = await prisma.store.findUnique({
-      where: { id: storeId },
-    });
+    const store = db.select()
+      .from(stores)
+      .where(and(eq(stores.id, storeId), eq(stores.ownerId, user.id)))
+      .limit(1)
+      .get() as StoreType | undefined;
 
-    if (!store || store.ownerId !== user.id) {
+    if (!store) {
       return NextResponse.json(
         { success: false, error: 'Store not found or you do not own it' },
         { status: 403 }
       );
     }
 
-    // Create product with Prisma
-    const product = await prisma.product.create({
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        image,
-        category,
-        stock: stock || 0,
-        storeId,
-      },
-      include: {
-        store: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
+    // Create product with Drizzle
+    const now = new Date();
+    const productId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    const product = db.insert(products).values({
+      id: productId,
+      name,
+      description,
+      price: parseFloat(price),
+      image,
+      category,
+      stock: stock || 0,
+      storeId,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    }).returning().get() as ProductType;
 
     return NextResponse.json({
       success: true,
@@ -152,12 +202,12 @@ export async function POST(request: NextRequest) {
         name: product.name,
         price: product.price,
         image: product.image,
-        seller: product.store.name,
-        sellerId: product.store.id,
+        seller: store.name,
+        sellerId: store.id,
         category: product.category,
         description: product.description,
         stock: product.stock,
-        createdAt: product.createdAt.toISOString(),
+        createdAt: product.createdAt,
       },
     });
   } catch (error) {
@@ -167,4 +217,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Helper function for AND conditions
+function and(...conditions: any[]) {
+  return conditions.reduce((acc, cond) => {
+    if (cond) return { ...acc, ...cond };
+    return acc;
+  }, {});
 }
