@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (phoneNumber: string, token: string) => void;
+  login: (phoneNumber: string, token: string, userData?: User) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
 }
@@ -44,8 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = (phoneNumber: string, token: string) => {
-    const userData: User = {
+  const login = (phoneNumber: string, token: string, userData?: User) => {
+    const finalUserData = userData || {
       id: Date.now().toString(),
       phoneNumber,
       name: "User",
@@ -53,8 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Store in sessionStorage
     sessionStorage.setItem("authToken", token);
-    sessionStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
+    sessionStorage.setItem("user", JSON.stringify(finalUserData));
+    setUser(finalUserData);
     
     // Also set as cookie for middleware access
     document.cookie = `authToken=${token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days

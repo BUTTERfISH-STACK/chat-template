@@ -33,17 +33,21 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to send OTP");
+        throw new Error(data.error || "Failed to login");
       }
 
-      // Store phone number for OTP verification
-      sessionStorage.setItem("phoneNumber", phoneNumber);
+      // Store auth data in sessionStorage
+      sessionStorage.setItem("authToken", data.token);
+      sessionStorage.setItem("user", JSON.stringify(data.user));
       
-      // Navigate to OTP page
-      router.push("/auth/otp");
+      // Set cookie for middleware access
+      document.cookie = `authToken=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+      
+      // Navigate to chat page
+      router.push("/chat");
     } catch (err) {
       console.error("Login error:", err);
-      setError(err instanceof Error ? err.message : "Failed to send OTP. Please try again.");
+      setError(err instanceof Error ? err.message : "Failed to login. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +61,7 @@ export default function LoginPage() {
         </h1>
         
         <p className="text-sm text-[var(--muted-foreground)] mb-6 text-center">
-          Enter your phone number to receive a verification code
+          Enter your phone number to login or create an account
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,7 +92,7 @@ export default function LoginPage() {
             {isLoading ? (
               <span className="animate-spin mr-2">⟳</span>
             ) : null}
-            Send Code
+            Login / Register
           </Button>
           
           <p className="text-xs text-gray-500 text-center">

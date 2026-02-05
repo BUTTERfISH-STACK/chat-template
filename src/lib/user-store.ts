@@ -1,5 +1,5 @@
 // In-memory user store to replace Prisma database
-// WhatsApp-style phone number authentication
+// Phone number-based authentication (WhatsApp-style)
 
 interface User {
   id: string;
@@ -13,16 +13,8 @@ interface User {
   updatedAt: Date;
 }
 
-interface OTP {
-  phoneNumber: string;
-  otp: string;
-  expiresAt: Date;
-  createdAt: Date;
-}
-
 // In-memory storage
 const users: Map<string, User> = new Map();
-const otps: Map<string, OTP> = new Map();
 
 // Generate unique ID
 export function generateId(): string {
@@ -75,46 +67,6 @@ export function updateUser(id: string, data: Partial<User>): User | undefined {
   return undefined;
 }
 
-// OTP operations
-export function addOtp(phoneNumber: string, otp: string, expiresInMinutes: number = 5): void {
-  const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
-  
-  // Remove existing OTP for this phone number
-  otps.delete(phoneNumber);
-  
-  const otpData: OTP = {
-    phoneNumber,
-    otp,
-    expiresAt,
-    createdAt: new Date(),
-  };
-  
-  otps.set(phoneNumber, otpData);
-  console.log(`OTP stored for ${phoneNumber}: ${otp} (expires at ${expiresAt.toISOString()})`);
-}
-
-export function getOtp(phoneNumber: string): string | null {
-  const otpData = otps.get(phoneNumber);
-  
-  if (!otpData) {
-    console.log(`No OTP found for ${phoneNumber}`);
-    return null;
-  }
-  
-  if (new Date() > otpData.expiresAt) {
-    console.log(`OTP expired for ${phoneNumber}`);
-    otps.delete(phoneNumber);
-    return null;
-  }
-  
-  return otpData.otp;
-}
-
-export function removeOtp(phoneNumber: string): void {
-  otps.delete(phoneNumber);
-  console.log(`OTP removed for ${phoneNumber}`);
-}
-
 // Get all users (for debugging)
 export function getAllUsers(): User[] {
   return Array.from(users.values());
@@ -123,5 +75,4 @@ export function getAllUsers(): User[] {
 // Clear all data (for testing)
 export function clearAllData(): void {
   users.clear();
-  otps.clear();
 }
