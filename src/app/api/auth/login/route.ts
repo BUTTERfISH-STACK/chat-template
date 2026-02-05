@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { findUserByPhone, createUser } from "@/lib/user-store";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key-change-in-production";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,9 +35,17 @@ export async function POST(request: NextRequest) {
 
     // Generate JWT token
     console.log("Generating JWT token...");
+    if (!JWT_SECRET) {
+      console.error("JWT_SECRET is not configured");
+      return NextResponse.json(
+        { error: "Server configuration error. Please try again later." },
+        { status: 500 }
+      );
+    }
+
     const token = jwt.sign(
       { userId: user.id, phoneNumber: user.phoneNumber },
-      JWT_SECRET!,
+      JWT_SECRET,
       { expiresIn: "7d" }
     );
     console.log("JWT token generated successfully");
