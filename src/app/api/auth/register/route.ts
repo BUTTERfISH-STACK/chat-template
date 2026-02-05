@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       authToken: token,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       token,
       user: {
@@ -80,6 +80,15 @@ export async function POST(request: NextRequest) {
         name,
       },
     });
+    
+    response.cookies.set("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+    
+    return response;
   } catch (error: any) {
     console.error("Registration error:", error);
     return NextResponse.json(

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_ROUTES = ["/login", "/register", "/api/auth"];
+const PUBLIC_ROUTES = ["/login", "/register"];
 const AUTH_REDIRECT_ROUTES = ["/login", "/register"];
 const DEFAULT_PROTECTED_ROUTE = "/chat";
 const DEFAULT_PUBLIC_ROUTE = "/login";
@@ -50,7 +50,7 @@ export function middleware(request: NextRequest) {
   }
 
   const isPublic = isPublicRoute(pathname);
-  const authToken = getAuthToken(cookies) || localStorage?.getItem?.("authToken");
+  const authToken = getAuthToken(cookies);
 
   if (authToken) {
     if (shouldRedirectAuthenticated(pathname)) {

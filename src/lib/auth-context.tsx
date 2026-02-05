@@ -54,9 +54,12 @@ function AuthContextProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      // Ignore errors
+    }
     setUser(null);
   };
 

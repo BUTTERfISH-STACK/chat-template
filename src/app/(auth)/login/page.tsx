@@ -43,8 +43,7 @@ export default function LoginPage() {
         throw new Error(data.error || "Authentication failed");
       }
 
-      // Store token and redirect
-      localStorage.setItem("authToken", data.token);
+      // Token is now set as a cookie by the server
       router.push("/chat");
       router.refresh();
     } catch (err: any) {
@@ -54,11 +53,36 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = () => {
-    // Demo login for testing
-    localStorage.setItem("authToken", "demo-token");
-    router.push("/chat");
-    router.refresh();
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Create a demo user and auto-login
+      const demoPhone = `+1234567890${Date.now().toString().slice(-4)}`;
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phoneNumber: demoPhone,
+          name: "Demo User",
+          password: "demo123",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Demo login failed");
+      }
+
+      router.push("/chat");
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -180,6 +204,7 @@ export default function LoginPage() {
             variant="outline"
             className="w-full h-11"
             onClick={handleDemoLogin}
+            disabled={isLoading}
           >
             Try Demo Account
           </Button>
