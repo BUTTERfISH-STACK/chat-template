@@ -51,9 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: "User",
     };
     
+    // Store in sessionStorage
     sessionStorage.setItem("authToken", token);
     sessionStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
+    
+    // Also set as cookie for middleware access
+    document.cookie = `authToken=${token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
   };
 
   const logout = () => {
@@ -61,6 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("phoneNumber");
     setUser(null);
+    
+    // Clear cookie
+    document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   };
 
   const updateUser = (updates: Partial<User>) => {
