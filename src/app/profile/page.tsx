@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -113,9 +114,13 @@ export default function ProfilePage() {
                       {user?.name || "Guest User"}
                     </h1>
                     <Badge variant="gold" className="flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
+                      <Image 
+                        src="/verify-badge.svg" 
+                        alt="Verified" 
+                        width={12} 
+                        height={12}
+                        className="w-3 h-3"
+                      />
                       CEO & Founder
                     </Badge>
                   </div>
@@ -207,9 +212,13 @@ export default function ProfilePage() {
                       {user?.name || "Guest User"}
                     </h1>
                     <Badge variant="gold" className="flex items-center gap-1 text-[10px] px-2 py-0.5">
-                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
+                      <Image 
+                        src="/verify-badge.svg" 
+                        alt="Verified" 
+                        width={10} 
+                        height={10}
+                        className="w-2.5 h-2.5"
+                      />
                       CEO & Founder
                     </Badge>
                   </div>
