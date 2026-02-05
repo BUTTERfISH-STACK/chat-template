@@ -5,6 +5,7 @@ export { Badge } from "./badge"
 export { Input } from "./input"
 export { Textarea } from "./textarea"
 export { Label } from "./label"
+export { Loading } from "./loading"
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card"
 export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "./dialog"
 
