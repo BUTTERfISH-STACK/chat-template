@@ -6,11 +6,16 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("Login attempt received");
+    console.log("JWT_SECRET:", JWT_SECRET ? "set" : "NOT SET");
+
     const { phoneNumber } = await request.json();
+    console.log("Phone number:", phoneNumber);
 
     // Validate phone number
     const phoneRegex = /^[0-9+\-\s()]{10,}$/;
     if (!phoneRegex.test(phoneNumber)) {
+      console.log("Invalid phone number format");
       return NextResponse.json(
         { error: "Please enter a valid phone number" },
         { status: 400 }
@@ -18,18 +23,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Find or create user
+    console.log("Looking up user...");
     let user = await findUserByPhone(phoneNumber);
+    console.log("User lookup result:", user ? "found" : "not found");
 
     if (!user) {
+      console.log("Creating new user...");
       user = await createUser(phoneNumber, "User");
+      console.log("User created:", user);
     }
 
     // Generate JWT token
+    console.log("Generating JWT token...");
     const token = jwt.sign(
       { userId: user.id, phoneNumber: user.phoneNumber },
       JWT_SECRET!,
       { expiresIn: "7d" }
     );
+    console.log("JWT token generated successfully");
 
     return NextResponse.json({
       success: true,
@@ -44,8 +55,12 @@ export async function POST(request: NextRequest) {
         isVerified: user.isVerified,
       },
     });
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (error: any) {
+    console.error("Login error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
     return NextResponse.json(
       { error: "An error occurred during login. Please try again." },
       { status: 500 }
