@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
@@ -23,7 +23,11 @@ export const metadata: Metadata = {
   description: "A premium chat platform with integrated marketplace for mini-stores. Connect, chat, and shop securely.",
   keywords: ["chat", "marketplace", "premium", "secure messaging", "online store"],
   authors: [{ name: "Vellon Team" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#faf9f7",
 };
 
