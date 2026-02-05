@@ -23,6 +23,8 @@ export interface User {
   avatar?: string;
   phoneNumber?: string;
   provider?: string;
+  bio?: string;
+  isVerified?: boolean;
 }
 
 export interface AuthContextType {
