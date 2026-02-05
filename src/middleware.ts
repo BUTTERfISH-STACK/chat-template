@@ -1,12 +1,7 @@
 /**
  * Authentication Middleware
  * Protects routes and validates authentication tokens
- * 
- * Security Features:
- * - Token validation
- * - Route protection
- * - Secure redirect handling
- * - CSRF protection through SameSite cookies
+ * Supports both NextAuth.js session cookies and custom token-based authentication
  */
 
 import { NextResponse } from "next/server"
@@ -18,7 +13,6 @@ import type { NextRequest } from "next/server"
 
 /**
  * List of public routes that don't require authentication
- * Includes login, register, and API auth endpoints
  */
 const PUBLIC_ROUTES = [
   "/login",
@@ -53,8 +47,6 @@ const DEFAULT_PUBLIC_ROUTE = "/login"
 
 /**
  * Check if a path is a public route
- * @param pathname - The path to check
- * @returns True if public, false otherwise
  */
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some((route) => 
@@ -64,8 +56,6 @@ function isPublicRoute(pathname: string): boolean {
 
 /**
  * Check if a path should redirect authenticated users
- * @param pathname - The path to check
- * @returns True if should redirect, false otherwise
  */
 function shouldRedirectAuthenticated(pathname: string): boolean {
   return AUTH_REDIRECT_ROUTES.some((route) => 
@@ -75,43 +65,44 @@ function shouldRedirectAuthenticated(pathname: string): boolean {
 
 /**
  * Get authentication token from cookies
- * Checks multiple cookie names for compatibility
- * @param cookies - Request cookies
- * @returns The auth token or null
+ * Checks for NextAuth session token and custom auth token
  */
 function getAuthToken(cookies: any): string | null {
-  // Check for custom auth token
-  const customToken = cookies.get("authToken")?.value
-  if (customToken) return customToken
-
-  // Check for NextAuth session token
+  // Check for NextAuth session token (JWT format)
   const nextAuthToken = cookies.get("next-auth.session-token")?.value
-  if (nextAuthToken) return nextAuthToken
+  if (nextAuthToken && nextAuthToken.split(".").length === 3) {
+    return nextAuthToken
+  }
 
   // Check for NextAuth callback token
   const callbackToken = cookies.get("__Secure-next-auth.session-token")?.value
-  if (callbackToken) return callbackToken
+  if (callbackToken && callbackToken.split(".").length === 3) {
+    return callbackToken
+  }
+
+  // Check for custom auth token
+  const customToken = cookies.get("authToken")?.value
+  if (customToken) return customToken
 
   return null
 }
 
 /**
- * Validate token format (basic validation)
- * In production, validate against a token store or database
- * @param token - The token to validate
- * @returns True if valid format, false otherwise
+ * Validate token format
  */
 function isValidTokenFormat(token: string): boolean {
-  // Basic format validation: should be a hex string of reasonable length
+  // Check if it's a JWT (3 parts separated by dots)
+  if (token.split(".").length === 3) {
+    return true // Likely a NextAuth JWT
+  }
+  
+  // Check if it's a hex string (custom token)
   const hexRegex = /^[a-f0-9]{32,}$/i
   return hexRegex.test(token)
 }
 
 /**
  * Create a redirect response with security headers
- * @param url - The URL to redirect to
- * @param request - The original request
- * @returns NextResponse with redirect
  */
 function createSecureRedirect(url: URL, request: NextRequest): NextResponse {
   const response = NextResponse.redirect(url)
@@ -137,7 +128,7 @@ export function middleware(request: NextRequest) {
   const { nextUrl, cookies } = request
   const pathname = nextUrl.pathname
 
-  // Skip middleware for static files and API routes that handle their own auth
+  // Skip middleware for static files and specific API routes
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/static") ||
@@ -199,10 +190,6 @@ export function middleware(request: NextRequest) {
 // CONFIGURATION
 // ============================================================================
 
-/**
- * Middleware configuration
- * Defines which routes the middleware should apply to
- */
 export const config = {
   matcher: [
     /*

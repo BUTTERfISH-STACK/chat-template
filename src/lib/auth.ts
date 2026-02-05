@@ -18,6 +18,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     }),
     GitHub({
       clientId: process.env.GITHUB_CLIENT_ID,
@@ -75,6 +82,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Persist provider info
       if (account) {
         token.provider = account.provider
+        token.accessToken = account.access_token
       }
       
       return token
@@ -84,8 +92,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string
         session.user.phoneNumber = token.phoneNumber as string | undefined
         session.user.provider = token.provider as string | undefined
+        ;(session as any).accessToken = token.accessToken
       }
       return session
+    },
+    async signIn({ user, account }) {
+      // Allow OAuth sign-ins
+      if (account?.provider === "google" || account?.provider === "github") {
+        return true
+      }
+      // Allow credentials sign-in
+      return true
     },
   },
   pages: {

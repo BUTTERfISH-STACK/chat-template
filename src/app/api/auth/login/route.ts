@@ -34,14 +34,6 @@ import {
   validateEmail,
 } from '@/lib/security';
 
-// Import email OTP service (CommonJS module)
-let emailOtpService: any = null;
-try {
-  emailOtpService = require('@/services/emailOtpService');
-} catch (e) {
-  console.warn('Email OTP service not available:', e);
-}
-
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -74,6 +66,36 @@ interface SessionEntry {
 
 const otpStore = new Map<string, OTPEntry>();
 const sessionStore = new Map<string, SessionEntry>();
+
+// ============================================================================
+// EMAIL OTP SIMULATION (Development Mode)
+// ============================================================================
+
+/**
+ * Simulate sending email OTP - logs to console in development
+ * In production, integrate with Nodemailer or other email service
+ */
+async function sendEmailOTP(email: string, otp: string): Promise<boolean> {
+  try {
+    // In development, just log the OTP
+    console.log(`\n=== Email OTP ===`);
+    console.log(`To: ${email}`);
+    console.log(`OTP: ${otp}`);
+    console.log(`=============\n`);
+    
+    logSecurityEvent({
+      type: SecurityEventType.OTP_GENERATED,
+      timestamp: Date.now(),
+      identifier: email,
+      details: { maskedEmail: email.slice(0, 3) + '***' + email.slice(-3) },
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Email sending error:', error);
+    return false;
+  }
+}
 
 // ============================================================================
 // DATABASE OPERATIONS
@@ -150,7 +172,7 @@ async function createOrGetUser(
   }
 }
 
-async function sendOTP(phoneNumber: string, otp: string): Promise<boolean> {
+async function sendSMSOTP(phoneNumber: string, otp: string): Promise<boolean> {
   try {
     console.log(`[SMS] OTP for ${phoneNumber}: ${otp}`);
     
@@ -238,7 +260,7 @@ async function handleSendPhoneOTP(
     type: 'phone',
   });
 
-  const sent = await sendOTP(phoneNumber, otp);
+  const sent = await sendSMSOTP(phoneNumber, otp);
   
   if (!sent) {
     otpStore.delete(phoneNumber);
@@ -265,13 +287,6 @@ async function handleSendEmailOTP(
   email: string,
   request: NextRequest
 ): Promise<NextResponse> {
-  if (!emailOtpService) {
-    return NextResponse.json(
-      { error: 'Email OTP service is not available' },
-      { status: 503 }
-    );
-  }
-
   const ip = request.headers.get('x-forwarded-for') || 
              request.headers.get('x-real-ip') || 
              'unknown';
@@ -292,21 +307,37 @@ async function handleSendEmailOTP(
     );
   }
 
-  const result = await emailOtpService.sendEmailOTP(email);
+  // Generate OTP
+  const otp = generateSecureOTP();
+  const expiresAt = Date.now() + SECURITY_CONFIG.OTP_EXPIRY_MS;
+  const hashedOTP = hashOTP(otp);
+
+  // Store OTP
+  otpStore.set(email, {
+    hashedOTP,
+    expiresAt,
+    attempts: 0,
+    lastAttemptAt: 0,
+    type: 'email',
+  });
+
+  // Send email OTP
+  const sent = await sendEmailOTP(email, otp);
   
-  if (!result.success) {
+  if (!sent) {
+    otpStore.delete(email);
     return NextResponse.json(
-      { error: result.message },
-      { status: result.retryAfter ? 429 : 400 }
+      { error: 'Failed to send OTP. Please try again.' },
+      { status: 500 }
     );
   }
 
   return NextResponse.json({
     success: true,
-    message: result.message,
+    message: 'OTP sent successfully',
     method: 'email',
-    expiresIn: result.expiresIn,
-    ...(process.env.NODE_ENV !== 'production' && { debugOtp: result.debugOtp }),
+    expiresIn: SECURITY_CONFIG.OTP_EXPIRY_MS / 1000,
+    ...(process.env.NODE_ENV === 'development' && { debugOtp: otp }),
   });
 }
 
@@ -340,45 +371,7 @@ async function handleVerifyOTP(
     );
   }
 
-  // For email OTP, use the email service
-  if (type === 'email' && emailOtpService) {
-    const result = await emailOtpService.verifyEmailOTP(identifier, otp);
-    
-    if (!result.success) {
-      return NextResponse.json(
-        { 
-          error: result.message,
-          ...(result.attemptsRemaining && { remainingAttempts: result.attemptsRemaining })
-        },
-        { status: 400 }
-      );
-    }
-
-    // Create or get user with email
-    const user = await createOrGetUser(undefined, identifier);
-    const { token, expiresAt } = generateSessionToken();
-
-    sessionStore.set(token, {
-      userId: user.id,
-      expiresAt,
-      createdAt: Date.now(),
-    });
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        phoneNumber: user.phoneNumber,
-        email: user.email,
-        name: user.name,
-        avatar: user.avatar,
-      },
-      token,
-      expiresIn: SECURITY_CONFIG.TOKEN_EXPIRY_MS / 1000,
-    });
-  }
-
-  // Phone OTP verification
+  // Get stored OTP data
   const storedData = otpStore.get(identifier);
   
   if (!storedData) {
@@ -391,9 +384,19 @@ async function handleVerifyOTP(
     );
   }
 
+  // Verify the type matches
+  if (storedData.type !== type) {
+    return NextResponse.json(
+      {
+        error: 'Invalid OTP request type. Please start over.',
+      },
+      { status: 400 }
+    );
+  }
+
   if (Date.now() > storedData.expiresAt) {
     otpStore.delete(identifier);
-    resetRateLimit(`otp:phone:${identifier}`);
+    resetRateLimit(`otp:${type}:${identifier}`);
     
     return NextResponse.json(
       {
@@ -406,7 +409,7 @@ async function handleVerifyOTP(
 
   if (storedData.attempts >= SECURITY_CONFIG.OTP_MAX_ATTEMPTS) {
     otpStore.delete(identifier);
-    resetRateLimit(`otp:phone:${identifier}`);
+    resetRateLimit(`otp:${type}:${identifier}`);
     
     return NextResponse.json(
       {
@@ -437,9 +440,13 @@ async function handleVerifyOTP(
 
   // OTP verified
   otpStore.delete(identifier);
-  resetRateLimit(`otp:phone:${identifier}`);
+  resetRateLimit(`otp:${type}:${identifier}`);
 
-  const user = await createOrGetUser(identifier);
+  // Create or get user
+  const user = type === 'phone' 
+    ? await createOrGetUser(identifier)
+    : await createOrGetUser(undefined, identifier);
+    
   const { token, expiresAt } = generateSessionToken();
 
   sessionStore.set(token, {
