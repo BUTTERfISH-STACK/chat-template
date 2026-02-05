@@ -65,19 +65,26 @@ function shouldRedirectAuthenticated(pathname: string): boolean {
 
 /**
  * Get authentication token from cookies
- * Checks for NextAuth session token and custom auth token
+ * Checks for NextAuth v5 session token and custom auth token
  */
 function getAuthToken(cookies: any): string | null {
-  // Check for NextAuth session token (JWT format)
-  const nextAuthToken = cookies.get("next-auth.session-token")?.value
+  // Check for NextAuth v5 session token (JWT format)
+  // NextAuth v5 uses different cookie names
+  const nextAuthToken = cookies.get("authjs.session-token")?.value
   if (nextAuthToken && nextAuthToken.split(".").length === 3) {
     return nextAuthToken
   }
 
-  // Check for NextAuth callback token
-  const callbackToken = cookies.get("__Secure-next-auth.session-token")?.value
-  if (callbackToken && callbackToken.split(".").length === 3) {
-    return callbackToken
+  // Check for Secure NextAuth v5 session token
+  const secureToken = cookies.get("__Secure-authjs.session-token")?.value
+  if (secureToken && secureToken.split(".").length === 3) {
+    return secureToken
+  }
+
+  // Check for legacy NextAuth v4 session token
+  const legacyToken = cookies.get("next-auth.session-token")?.value
+  if (legacyToken && legacyToken.split(".").length === 3) {
+    return legacyToken
   }
 
   // Check for custom auth token
@@ -152,10 +159,13 @@ export function middleware(request: NextRequest) {
     // Validate token format
     if (!isValidTokenFormat(authToken)) {
       // Invalid token format, clear it and redirect to login
-      const response = NextResponse.redirect(new URL(DEFAULT_PUBLIC_ROUTE, nextUrl))
-      response.cookies.delete("authToken")
+      const response = createSecureRedirect(new URL(DEFAULT_PUBLIC_ROUTE, nextUrl), request)
+      // Clear all possible auth cookies (NextAuth v5 and v4)
+      response.cookies.delete("authjs.session-token")
+      response.cookies.delete("__Secure-authjs.session-token")
       response.cookies.delete("next-auth.session-token")
       response.cookies.delete("__Secure-next-auth.session-token")
+      response.cookies.delete("authToken")
       return response
     }
 
