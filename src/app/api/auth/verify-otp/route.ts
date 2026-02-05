@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOtp, removeOtp } from "../otp-storage";
-import prisma from "@/lib/prisma";
+import { getOtp, removeOtp, findUserByPhone, createUser, updateUser } from "@/lib/user-store";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "default-secret-key";
@@ -46,24 +45,13 @@ export async function POST(request: NextRequest) {
     await removeOtp(phoneNumber);
 
     // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { phoneNumber },
-    });
+    let user = findUserByPhone(phoneNumber);
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          phoneNumber,
-          name: "User",
-          isVerified: true,
-        },
-      });
+      user = createUser(phoneNumber, "User");
     } else {
       // Update user to verified
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { isVerified: true },
-      });
+      user = updateUser(user.id, { isVerified: true }) || user;
     }
 
     // Generate JWT token

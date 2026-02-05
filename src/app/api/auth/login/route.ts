@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { addOtp, findUserByPhone, createUser } from "@/lib/user-store";
 import { sendOTP, generateOTP } from "@/lib/sms";
-import { addOtp } from "../otp-storage";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,18 +16,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user if not exists
-    let user = await prisma.user.findUnique({
-      where: { phoneNumber },
-    });
+    let user = findUserByPhone(phoneNumber);
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          phoneNumber,
-          name: "User",
-          isVerified: false,
-        },
-      });
+      user = createUser(phoneNumber, "User");
+      console.log(`New user created: ${phoneNumber}`);
     }
 
     // Generate and store OTP
