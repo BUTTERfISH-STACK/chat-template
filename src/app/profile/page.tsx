@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
 import { useAuth } from "@/lib/auth-context";
@@ -107,9 +108,17 @@ export default function ProfilePage() {
               {/* Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-4 mb-4">
-                  <h1 className="text-2xl font-display font-bold text-[var(--foreground)]">
-                    {user?.name || "Guest User"}
-                  </h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-display font-bold text-[var(--foreground)]">
+                      {user?.name || "Guest User"}
+                    </h1>
+                    <Badge variant="gold" className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      CEO & Founder
+                    </Badge>
+                  </div>
                   <div className="flex items-center gap-2">
                     {isOwnProfile ? (
                       <>
@@ -193,9 +202,17 @@ export default function ProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h1 className="text-xl font-display font-bold text-[var(--foreground)]">
-                    {user?.name || "Guest User"}
-                  </h1>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-xl font-display font-bold text-[var(--foreground)]">
+                      {user?.name || "Guest User"}
+                    </h1>
+                    <Badge variant="gold" className="flex items-center gap-1 text-[10px] px-2 py-0.5">
+                      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      CEO & Founder
+                    </Badge>
+                  </div>
                   <p className="text-sm text-[var(--muted-foreground)]">
                     @{user?.name?.toLowerCase().replace(/\s+/g, "") || "username"}
                   </p>
