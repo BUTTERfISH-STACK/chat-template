@@ -45,6 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (phoneNumber: string, token: string, userData?: User) => {
+    console.log("AuthContext: login called with", { phoneNumber, token: token?.substring(0, 20) + "..." });
+    
     const finalUserData = userData || {
       id: Date.now().toString(),
       phoneNumber,
@@ -58,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Also set as cookie for middleware access
     document.cookie = `authToken=${token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+    
+    console.log("AuthContext: login completed successfully");
   };
 
   const logout = () => {
