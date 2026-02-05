@@ -188,7 +188,7 @@ function Loading({
             />
             <animate
               attributeName="height"
-              begin="svgSpinnersBlocks0.begin+0.2s"
+              begin="svgSpinnersBlocksWave0.begin+0.2s"
               dur="0.6s"
               values="7.33;1.33;7.33"
             />
