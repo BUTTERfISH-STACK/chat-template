@@ -1,78 +1,54 @@
-// In-memory user store to replace Prisma database
+// User store using Prisma for persistent storage
 // Phone number-based authentication (WhatsApp-style)
 
-interface User {
-  id: string;
-  phoneNumber: string;
-  name: string;
-  email?: string;
-  avatar?: string;
-  bio?: string;
-  isVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { PrismaClient, User } from "@prisma/client";
 
-// In-memory storage
-const users: Map<string, User> = new Map();
+const prisma = new PrismaClient();
 
 // Generate unique ID
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
-// User operations
-export function createUser(phoneNumber: string, name: string = "User"): User {
-  const user: User = {
-    id: generateId(),
-    phoneNumber,
-    name,
-    isVerified: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  users.set(phoneNumber, user);
+// User operations using Prisma
+export async function createUser(phoneNumber: string, name: string = "User"): Promise<User> {
+  const user = await prisma.user.create({
+    data: {
+      id: generateId(),
+      phoneNumber,
+      name,
+      isVerified: true,
+    },
+  });
   console.log(`User created: ${phoneNumber}`);
   return user;
 }
 
-export function findUserByPhone(phoneNumber: string): User | undefined {
-  return users.get(phoneNumber);
+export async function findUserByPhone(phoneNumber: string): Promise<User | null> {
+  return prisma.user.findUnique({
+    where: { phoneNumber },
+  });
 }
 
-export function findUserById(id: string): User | undefined {
-  for (const user of users.values()) {
-    if (user.id === id) {
-      return user;
-    }
-  }
-  return undefined;
+export async function findUserById(id: string): Promise<User | null> {
+  return prisma.user.findUnique({
+    where: { id },
+  });
 }
 
-export function updateUser(id: string, data: Partial<User>): User | undefined {
-  for (const [phoneNumber, user] of users.entries()) {
-    if (user.id === id) {
-      const updatedUser = {
-        ...user,
-        ...data,
-        id: user.id, // Preserve ID
-        phoneNumber: user.phoneNumber, // Preserve phone number
-        createdAt: user.createdAt, // Preserve creation date
-        updatedAt: new Date(),
-      };
-      users.set(phoneNumber, updatedUser);
-      return updatedUser;
-    }
-  }
-  return undefined;
+export async function updateUser(id: string, data: Partial<User>): Promise<User | null> {
+  return prisma.user.update({
+    where: { id },
+    data,
+  });
 }
 
 // Get all users (for debugging)
-export function getAllUsers(): User[] {
-  return Array.from(users.values());
+export async function getAllUsers(): Promise<User[]> {
+  return prisma.user.findMany();
 }
 
 // Clear all data (for testing)
-export function clearAllData(): void {
-  users.clear();
+export async function clearAllData(): Promise<void> {
+  await prisma.user.deleteMany();
 }

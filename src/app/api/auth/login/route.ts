@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Find or create user - immediate login without OTP
-    let user = findUserByPhone(phoneNumber);
+    let user = await findUserByPhone(phoneNumber);
 
     if (!user) {
-      user = createUser(phoneNumber, "User");
+      user = await createUser(phoneNumber, "User");
       console.log(`New user registered: ${phoneNumber}`);
     } else {
       console.log(`User logged in: ${phoneNumber}`);
