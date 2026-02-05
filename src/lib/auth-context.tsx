@@ -9,7 +9,8 @@
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { SessionProvider, useSession, signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
+import { auth, signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "@/lib/auth";
 
 // ============================================================================
 // TYPES
@@ -83,7 +84,7 @@ function AuthContextProvider({ children }: { children: ReactNode }) {
    * Sign out the user
    */
   const handleSignOut = () => {
-    nextAuthSignOut({ callbackUrl: "/login" });
+    nextAuthSignOut({ redirectTo: "/login" });
   };
 
   /**
