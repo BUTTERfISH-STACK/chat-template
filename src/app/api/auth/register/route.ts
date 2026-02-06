@@ -174,10 +174,11 @@ export async function POST(request: NextRequest) {
     return response;
 
   } catch (error: any) {
-    console.error(`[${requestId}] Unexpected error:`, error.message);
+    console.error(`[${requestId}] Unexpected error:`, error);
+    console.error(`[${requestId}] Error stack:`, error.stack);
     
     return NextResponse.json(
-      { success: false, message: 'An unexpected error occurred. Please try again later.' } as RegisterResponse,
+      { success: false, message: 'An unexpected error occurred. Please try again later.', errors: [{ field: 'general', message: error.message, code: 'ERROR' }] } as RegisterResponse,
       { status: 500 }
     );
   }
