@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/lib/supabase/auth-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SideNav, TopNavBar } from "@/components/ui/SideNav"

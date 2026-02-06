@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/supabase/auth-context";
 import { cn } from "@/lib/utils";
 
 // User preferences interface
@@ -202,7 +202,7 @@ const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, updateUser } = useAuth();
+  const { user, profile, isLoading: authLoading, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [isMounted, setIsMounted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -380,15 +380,15 @@ export default function SettingsPage() {
 
   // Initialize form data from user
   useEffect(() => {
-    if (user) {
+    if (profile) {
       setFormData({
-        name: user.name || "",
-        email: user.email || "",
-        bio: user.bio || "",
-        phoneNumber: user.phoneNumber || "",
+        name: profile.full_name || "",
+        email: user?.email || "",
+        bio: profile.bio || "",
+        phoneNumber: profile.phone_number || "",
       });
     }
-  }, [user]);
+  }, [profile, user]);
 
   // Load preferences from localStorage on mount (client-side only)
   useEffect(() => {
@@ -513,12 +513,11 @@ export default function SettingsPage() {
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Update user in auth context and sessionStorage
-      updateUser({
-        name: formData.name,
-        email: formData.email,
+      // Update user profile in Supabase
+      await updateUser({
+        full_name: formData.name,
         bio: formData.bio,
-        phoneNumber: formData.phoneNumber,
+        phone_number: formData.phoneNumber,
       });
 
       showToast("success", "Profile updated successfully!");
@@ -981,9 +980,9 @@ Each code can only be used once.
         return;
       }
 
-      // Create object URL for preview and update user
+      // Create object URL for preview and update user profile
       const imageUrl = URL.createObjectURL(file);
-      updateUser({ avatar: imageUrl });
+      updateUser({ avatar_url: imageUrl });
       showToast("success", "Profile photo updated successfully!");
     }
   };
@@ -1022,7 +1021,7 @@ Each code can only be used once.
             {/* Profile Header */}
             <div className="flex items-center gap-4">
               <Avatar className="w-20 h-20">
-                <AvatarImage src={user?.avatar} alt={formData.name || "User"} />
+                <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt={formData.name || "User"} />
                 <AvatarFallback className="text-2xl">
                   {formData.name.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
@@ -1144,7 +1143,7 @@ Each code can only be used once.
                   <div>
                     <p className="font-medium">Phone Number</p>
                     <p className="text-sm text-[var(--muted-foreground)]">
-                      {user?.phoneNumber || "Not set"}
+                      {profile?.phone_number || "Not set"}
                     </p>
                   </div>
                   <Button variant="outline" size="sm">Change</Button>
@@ -1168,7 +1167,7 @@ Each code can only be used once.
                   <div>
                     <p className="font-medium">Username</p>
                     <p className="text-sm text-[var(--muted-foreground)]">
-                      @{user?.name?.toLowerCase().replace(/\s+/g, "") || "username"}
+                      @{profile?.username?.toLowerCase() || profile?.full_name?.toLowerCase().replace(/\s+/g, "") || "username"}
                     </p>
                   </div>
                   <Button variant="outline" size="sm">Change</Button>
@@ -1947,7 +1946,7 @@ Each code can only be used once.
                           Scan this QR code with your authenticator app
                         </p>
                         <p className="text-xs font-mono bg-[var(--background)] px-2 py-1 rounded">
-                          VELLON:{user?.phoneNumber || "user"}
+                          VELLON:{profile?.phone_number || user?.email?.split("@")[0] || "user"}
                         </p>
                       </div>
                     )}

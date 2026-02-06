@@ -25,6 +25,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<{ success: boolean; message: string }>;
   refreshProfile: () => Promise<void>;
+  updateUser: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -165,6 +166,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   };
 
+  // Update user profile
+  const updateUser = useCallback(async (updates: Partial<UserProfile>) => {
+    if (!user) return;
+    
+    const { error } = await updateProfile(user.id, updates);
+    
+    if (!error) {
+      await loadProfile(user.id);
+    }
+  }, [user, loadProfile]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -176,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         refreshProfile,
+        updateUser,
       }}
     >
       {children}
