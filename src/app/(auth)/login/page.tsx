@@ -44,14 +44,15 @@ export default function LoginPage() {
         try {
           const data = JSON.parse(text);
           errorMessage = data.error || errorMessage;
+          console.error("Auth error response:", data);
         } catch {
-          // Use raw text if not JSON
           errorMessage = text || errorMessage;
+          console.error("Auth error text:", text);
         }
         throw new Error(errorMessage);
       }
 
-      // Token is now set as a cookie by the server
+      console.log("Auth successful, redirecting to /chat");
       router.push("/chat");
       router.refresh();
     } catch (err: any) {
