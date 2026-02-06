@@ -51,7 +51,7 @@ function resetLoginAttempts(identifier: string): void {
 }
 
 interface LoginRequest {
-  phoneNumber: string;
+  email: string;
   password: string;
 }
 
@@ -61,18 +61,18 @@ function hashPassword(password: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { phoneNumber, password }: LoginRequest = await request.json();
+    const { email, password }: LoginRequest = await request.json();
 
     // Validate required fields
-    if (!phoneNumber || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: "Phone number and password are required" },
+        { error: "Email and password are required" },
         { status: 400 }
       );
     }
 
     // Check rate limit
-    const rateLimitResult = checkRateLimit(phoneNumber);
+    const rateLimitResult = checkRateLimit(email);
     
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
@@ -88,17 +88,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by phone number
+    // Find user by email
     const user = await db
       .select()
       .from(users)
-      .where(eq(users.phoneNumber, phoneNumber))
+      .where(eq(users.email, email))
       .limit(1);
 
     if (user.length === 0) {
-      recordFailedAttempt(phoneNumber);
+      recordFailedAttempt(email);
       return NextResponse.json(
-        { error: "Invalid phone number or password", code: "INVALID_CREDENTIALS" },
+        { error: "Invalid email or password", code: "INVALID_CREDENTIALS" },
         { status: 401 }
       );
     }
@@ -108,15 +108,15 @@ export async function POST(request: NextRequest) {
     // Verify password
     const hashedPassword = hashPassword(password);
     if (foundUser.password !== hashedPassword) {
-      recordFailedAttempt(phoneNumber);
+      recordFailedAttempt(email);
       return NextResponse.json(
-        { error: "Invalid phone number or password", code: "INVALID_CREDENTIALS" },
+        { error: "Invalid email or password", code: "INVALID_CREDENTIALS" },
         { status: 401 }
       );
     }
 
     // Reset rate limit on successful login
-    resetLoginAttempts(phoneNumber);
+    resetLoginAttempts(email);
 
     // Generate new token on login
     const token = crypto.randomBytes(32).toString("hex");
@@ -130,8 +130,8 @@ export async function POST(request: NextRequest) {
       token,
       user: {
         id: foundUser.id,
-        phoneNumber: foundUser.phoneNumber,
         email: foundUser.email,
+        phoneNumber: foundUser.phoneNumber,
         name: foundUser.name,
         avatar: foundUser.avatar,
       },
