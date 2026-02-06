@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { sqlite } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 
 // In-memory rate limiter for login attempts
@@ -93,14 +92,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by name and email combination (case-insensitive for name)
-    const user = await db
-      .select()
-      .from(users)
-      .where(and(eq(users.name, name.trim()), eq(users.email, email.toLowerCase())))
-      .limit(1);
+    // Find user by email (case-insensitive) and name (case-insensitive)
+    // Using raw SQL for case-insensitive comparison
+    const rawQuery = `SELECT * FROM users WHERE LOWER(email) = LOWER(?) AND LOWER(name) = LOWER(?) LIMIT 1`;
+    const user = sqlite.prepare(rawQuery).get(email.toLowerCase(), name.trim()) as typeof users.$inferSelect | undefined;
 
-    if (user.length === 0) {
+    if (!user) {
       recordFailedAttempt(email);
       return NextResponse.json(
         { error: "No account found with this name and Gmail address", code: "INVALID_CREDENTIALS" },
@@ -108,17 +105,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const foundUser = user[0];
+    const foundUser = user;
 
     // Reset rate limit on successful login
     resetLoginAttempts(email);
 
     // Generate new token on login
     const token = crypto.randomBytes(32).toString("hex");
-    await db
-      .update(users)
-      .set({ sessionToken: token })
-      .where(eq(users.id, foundUser.id));
+    
+    // Update session token using raw SQL
+    sqlite.prepare(`UPDATE users SET session_token = ? WHERE id = ?`).run(token, foundUser.id);
 
     const response = NextResponse.json({
       success: true,
