@@ -6,12 +6,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/supabase/auth-context";
 import { validatePassword, getPasswordStrengthLabel, getPasswordStrengthColor } from "@/lib/validators/passwordValidator";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -66,20 +64,26 @@ export default function RegisterPage() {
     }
 
     try {
-      const result = await register(
-        formData.email,
-        formData.password,
-        formData.fullName
-      );
+      // Direct API call to custom auth
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.fullName,
+          email: formData.email,
+        }),
+      });
+
+      const result = await response.json();
 
       if (result.success) {
-        setSuccess(result.message);
+        setSuccess(result.message || "Registration successful!");
         setTimeout(() => {
-          router.push("/chat");
+          router.push("/login");
           router.refresh();
         }, 1500);
       } else {
-        setError(result.message);
+        setError(result.message || "Registration failed. Please try again.");
       }
     } catch (err) {
       console.error("Registration error:", err);
@@ -226,9 +230,9 @@ export default function RegisterPage() {
             <Button
               type="submit"
               className="w-full h-11 font-semibold"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             >
-              {isLoading || authLoading ? (
+              {isLoading ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

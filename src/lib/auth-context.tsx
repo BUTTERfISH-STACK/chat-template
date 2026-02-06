@@ -40,7 +40,7 @@ function AuthContextProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing auth on mount
+    // Check for existing auth on mount (client-side only)
     const storedUser = getUserFromStorage();
     if (storedUser) {
       setUser(storedUser);
@@ -49,16 +49,24 @@ function AuthContextProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (token: string, userData: User) => {
-    localStorage.setItem("authToken", token);
-    localStorage.setItem("user", JSON.stringify(userData));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("user", JSON.stringify(userData));
+    }
     setUser(userData);
   };
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      if (typeof window !== "undefined") {
+        await fetch("/api/auth/logout", { method: "POST" });
+      }
     } catch (e) {
       // Ignore errors
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
     }
     setUser(null);
   };
@@ -93,8 +101,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
+  
+  // During SSR/pre-rendering, return a default value instead of throwing
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    return {
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+      login: () => {},
+      logout: async () => {},
+      updateUser: () => {},
+    };
   }
+  
   return context;
 }
