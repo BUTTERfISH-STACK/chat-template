@@ -206,17 +206,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Direct link to dedicated registration page */}
-          {isLogin && (
-            <div className="mt-4 text-center">
-              <Link 
-                href="/register" 
-                className="text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors"
-              >
-                Create a new account →
-              </Link>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
