@@ -83,8 +83,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary)]/5 via-[var(--background)] to-[var(--accent-purple)]/5" />
+      
+      {/* Floating Orbs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--primary)]/10 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--accent-purple)]/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--accent-gold)]/5 rounded-full blur-3xl animate-pulse-soft" />
+      
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e7e5e4_1px,transparent_1px),linear-gradient(to_bottom,#e7e5e4_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-5" />
+      
+      {/* Content */}
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--primary)]/10 mb-4">
