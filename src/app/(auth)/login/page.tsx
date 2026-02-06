@@ -6,9 +6,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, logout } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,6 +47,12 @@ export default function LoginPage() {
         const result = await response.json();
 
         if (response.ok && result.success) {
+          // Update auth context with user data
+          login(result.token, {
+            id: result.user?.id,
+            name: result.user?.name,
+            email: result.user?.email,
+          });
           setSuccess(result.message || "Login successful!");
           setTimeout(() => {
             router.push("/chat");
@@ -76,11 +84,17 @@ export default function LoginPage() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-          setSuccess(result.message || "Registration successful! You can now login.");
+          // Auto-login after successful registration
+          login(result.token, {
+            id: result.user?.id,
+            name: result.user?.name,
+            email: result.user?.email,
+          });
+          setSuccess(result.message || "Registration successful!");
           setTimeout(() => {
-            setIsLogin(true);
-            setFormData({ name: "", email: "" });
-          }, 1500);
+            router.push("/chat");
+            router.refresh();
+          }, 1000);
         } else {
           setError(result.message || result.error || "Registration failed. Please try again.");
         }
@@ -195,6 +209,9 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => {
+                if (isLogin) {
+                  logout();
+                }
                 setIsLogin(!isLogin);
                 setError("");
                 setSuccess("");
