@@ -6,15 +6,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/supabase/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, register, isLoading: authLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
+    phoneNumber: "",
     password: "",
     fullName: "",
     confirmPassword: "",
@@ -36,42 +35,60 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        // Login
-        const result = await login(formData.email, formData.password);
-        
-        if (result.success) {
-          setSuccess(result.message);
+        // Login using custom API (SQLite auth)
+        // Allow login with either email OR phone number
+        const loginData: { password: string; email?: string; phoneNumber?: string } = { 
+          password: formData.password 
+        };
+        if (formData.email) loginData.email = formData.email;
+        if (formData.phoneNumber) loginData.phoneNumber = formData.phoneNumber;
+
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(loginData),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          setSuccess(result.message || "Login successful!");
           setTimeout(() => {
             router.push("/chat");
             router.refresh();
           }, 1000);
         } else {
-          setError(result.message);
+          setError(result.error || "Login failed. Please try again.");
         }
       } else {
-        // Register
+        // Register using custom API (SQLite auth)
         if (formData.password !== formData.confirmPassword) {
           setError("Passwords do not match");
           setIsLoading(false);
           return;
         }
 
-        // Use the auth context register function
-        const result = await register(
-          formData.email,
-          formData.password,
-          formData.fullName
-        );
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            name: formData.fullName,
+            confirmPassword: formData.confirmPassword,
+          }),
+        });
 
-        if (result.success) {
-          setSuccess(result.message);
-          // Redirect to chat after registration
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          setSuccess(result.message || "Registration successful!");
           setTimeout(() => {
             router.push("/chat");
             router.refresh();
           }, 1500);
         } else {
-          setError(result.message);
+          setError(result.message || result.error || "Registration failed. Please try again.");
         }
       }
     } catch (err) {
@@ -139,7 +156,20 @@ export default function LoginPage() {
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                required
+                className="h-11"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                placeholder="+1234567890"
+                value={formData.phoneNumber}
+                onChange={handleChange}
                 className="h-11"
                 disabled={isLoading}
               />
@@ -151,7 +181,7 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
                 required
@@ -193,9 +223,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full h-11 font-semibold"
-              disabled={isLoading || authLoading}
+              disabled={isLoading}
             >
-              {isLoading || authLoading ? (
+              {isLoading ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

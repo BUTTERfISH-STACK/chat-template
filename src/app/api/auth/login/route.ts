@@ -51,7 +51,8 @@ function resetLoginAttempts(identifier: string): void {
 }
 
 interface LoginRequest {
-  email: string;
+  email?: string;
+  phoneNumber?: string;
   password: string;
 }
 
@@ -59,14 +60,35 @@ function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
+/**
+ * Verify password against salted hash (matches registration)
+ */
+function verifyPassword(password: string, storedHash: string): boolean {
+  try {
+    // Check if hash has salt format (salt:hash)
+    if (storedHash.includes(':')) {
+      const [salt, hash] = storedHash.split(':');
+      const computedHash = crypto.createHash('sha256').update(password + salt).digest('hex');
+      return hash === computedHash;
+    } else {
+      // Fallback to plain hash for backward compatibility
+      const hashedPassword = hashPassword(password);
+      return storedHash === hashedPassword;
+    }
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { email, password }: LoginRequest = await request.json();
+    const body = await request.json();
+    const { email, phoneNumber, password }: LoginRequest = body;
 
     // Validate required fields
-    if (!email || !password) {
+    if (!password || (!email && !phoneNumber)) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Email or phone number and password are required" },
         { status: 400 }
       );
     }
@@ -88,17 +110,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+    // Find user by email or phone number
+    let user;
+    if (email) {
+      user = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+    } else if (phoneNumber) {
+      user = await db
+        .select()
+        .from(users)
+        .where(eq(users.phoneNumber, phoneNumber))
+        .limit(1);
+    }
+
+    const identifier = email || phoneNumber;
 
     if (user.length === 0) {
-      recordFailedAttempt(email);
+      recordFailedAttempt(identifier!);
       return NextResponse.json(
-        { error: "Invalid email or password", code: "INVALID_CREDENTIALS" },
+        { error: "Invalid credentials", code: "INVALID_CREDENTIALS" },
         { status: 401 }
       );
     }
@@ -106,11 +139,11 @@ export async function POST(request: NextRequest) {
     const foundUser = user[0];
 
     // Verify password
-    const hashedPassword = hashPassword(password);
-    if (foundUser.password !== hashedPassword) {
-      recordFailedAttempt(email);
+    const isValidPassword = verifyPassword(password, foundUser.password!);
+    if (!isValidPassword) {
+      recordFailedAttempt(identifier!);
       return NextResponse.json(
-        { error: "Invalid email or password", code: "INVALID_CREDENTIALS" },
+        { error: "Invalid credentials", code: "INVALID_CREDENTIALS" },
         { status: 401 }
       );
     }
