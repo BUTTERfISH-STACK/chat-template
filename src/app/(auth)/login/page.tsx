@@ -12,11 +12,8 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
-    phoneNumber: "",
-    password: "",
-    fullName: "",
-    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -35,18 +32,14 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        // Login using custom API (SQLite auth)
-        // Allow login with either email OR phone number
-        const loginData: { password: string; email?: string; phoneNumber?: string } = { 
-          password: formData.password 
-        };
-        if (formData.email) loginData.email = formData.email;
-        if (formData.phoneNumber) loginData.phoneNumber = formData.phoneNumber;
-
+        // Login using name and Gmail email
         const response = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(loginData),
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+          }),
         });
 
         const result = await response.json();
@@ -61,21 +54,13 @@ export default function LoginPage() {
           setError(result.error || "Login failed. Please try again.");
         }
       } else {
-        // Register using custom API (SQLite auth)
-        if (formData.password !== formData.confirmPassword) {
-          setError("Passwords do not match");
-          setIsLoading(false);
-          return;
-        }
-
+        // Registration still uses the existing API
         const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            name: formData.name,
             email: formData.email,
-            password: formData.password,
-            name: formData.fullName,
-            confirmPassword: formData.confirmPassword,
           }),
         });
 
@@ -130,83 +115,35 @@ export default function LoginPage() {
         {/* Form Card */}
         <div className="bg-[var(--card)] rounded-2xl border border-[var(--border)] p-6 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required={!isLogin}
-                  className="h-11"
-                  disabled={isLoading}
-                />
-              </div>
-            )}
-
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="name">Full Name</Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="john@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                className="h-11"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                name="phoneNumber"
-                type="tel"
-                placeholder="+1234567890"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                className="h-11"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                value={formData.password}
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                value={formData.name}
                 onChange={handleChange}
                 required
                 className="h-11"
                 disabled={isLoading}
-                minLength={8}
               />
             </div>
 
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required={!isLogin}
-                  className="h-11"
-                  disabled={isLoading}
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Gmail Address</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="john@gmail.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="h-11"
+                disabled={isLoading}
+              />
+            </div>
 
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
@@ -275,7 +212,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-[var(--muted-foreground)] mt-6">
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          Sign in with your name and Gmail address
         </p>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 
 // In-memory rate limiter for login attempts
@@ -51,44 +51,27 @@ function resetLoginAttempts(identifier: string): void {
 }
 
 interface LoginRequest {
-  email?: string;
-  phoneNumber?: string;
-  password: string;
-}
-
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
-
-/**
- * Verify password against salted hash (matches registration)
- */
-function verifyPassword(password: string, storedHash: string): boolean {
-  try {
-    // Check if hash has salt format (salt:hash)
-    if (storedHash.includes(':')) {
-      const [salt, hash] = storedHash.split(':');
-      const computedHash = crypto.createHash('sha256').update(password + salt).digest('hex');
-      return hash === computedHash;
-    } else {
-      // Fallback to plain hash for backward compatibility
-      const hashedPassword = hashPassword(password);
-      return storedHash === hashedPassword;
-    }
-  } catch {
-    return false;
-  }
+  name: string;
+  email: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, phoneNumber, password }: LoginRequest = body;
+    const { name, email }: LoginRequest = body;
 
     // Validate required fields
-    if (!password || (!email && !phoneNumber)) {
+    if (!name || !email) {
       return NextResponse.json(
-        { error: "Email or phone number and password are required" },
+        { error: "Name and Gmail email are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate email is a Gmail address
+    if (!email.toLowerCase().endsWith('@gmail.com')) {
+      return NextResponse.json(
+        { error: "Please use your Gmail address for login" },
         { status: 400 }
       );
     }
@@ -110,43 +93,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email or phone number
-    let user;
-    if (email) {
-      user = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
-    } else if (phoneNumber) {
-      user = await db
-        .select()
-        .from(users)
-        .where(eq(users.phoneNumber, phoneNumber))
-        .limit(1);
-    }
-
-    const identifier = email || phoneNumber;
+    // Find user by name and email combination
+    const user = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.name, name), eq(users.email, email.toLowerCase())))
+      .limit(1);
 
     if (user.length === 0) {
-      recordFailedAttempt(identifier!);
+      recordFailedAttempt(email);
       return NextResponse.json(
-        { error: "Invalid credentials", code: "INVALID_CREDENTIALS" },
+        { error: "No account found with this name and Gmail address", code: "INVALID_CREDENTIALS" },
         { status: 401 }
       );
     }
 
     const foundUser = user[0];
-
-    // Verify password
-    const isValidPassword = verifyPassword(password, foundUser.password!);
-    if (!isValidPassword) {
-      recordFailedAttempt(identifier!);
-      return NextResponse.json(
-        { error: "Invalid credentials", code: "INVALID_CREDENTIALS" },
-        { status: 401 }
-      );
-    }
 
     // Reset rate limit on successful login
     resetLoginAttempts(email);
