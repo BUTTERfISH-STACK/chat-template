@@ -93,11 +93,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by name and email combination
+    // Find user by name and email combination (case-insensitive for name)
     const user = await db
       .select()
       .from(users)
-      .where(and(eq(users.name, name), eq(users.email, email.toLowerCase())))
+      .where(and(eq(users.name, name.trim()), eq(users.email, email.toLowerCase())))
       .limit(1);
 
     if (user.length === 0) {
