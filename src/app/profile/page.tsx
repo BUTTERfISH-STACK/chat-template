@@ -95,7 +95,7 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="relative flex-shrink-0">
                 <Avatar className="w-32 h-32 rounded-xl">
-                  <AvatarImage src={user?.avatar || user?.user_metadata?.avatar_url} alt={user?.name || "User"} />
+                  <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
                   <AvatarFallback className="text-2xl">
                     {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
@@ -200,7 +200,7 @@ export default function ProfilePage() {
             <div className="md:hidden">
               <div className="flex items-center gap-4 mb-4">
                 <Avatar className="w-20 h-20 rounded-xl">
-                  <AvatarImage src={user?.avatar || user?.user_metadata?.avatar_url} alt={user?.name || "User"} />
+                  <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
                   <AvatarFallback className="text-xl">
                     {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>

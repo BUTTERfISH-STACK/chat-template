@@ -1021,7 +1021,7 @@ Each code can only be used once.
             {/* Profile Header */}
             <div className="flex items-center gap-4">
               <Avatar className="w-20 h-20">
-                <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt={formData.name || "User"} />
+                <AvatarImage src={user?.avatar} alt={formData.name || "User"} />
                 <AvatarFallback className="text-2xl">
                   {formData.name.charAt(0).toUpperCase() || "U"}
                 </AvatarFallback>
@@ -1143,7 +1143,7 @@ Each code can only be used once.
                   <div>
                     <p className="font-medium">Phone Number</p>
                     <p className="text-sm text-[var(--muted-foreground)]">
-                      {profile?.phone_number || "Not set"}
+                      {user?.phoneNumber || "Not set"}
                     </p>
                   </div>
                   <Button variant="outline" size="sm">Change</Button>
@@ -1167,7 +1167,7 @@ Each code can only be used once.
                   <div>
                     <p className="font-medium">Username</p>
                     <p className="text-sm text-[var(--muted-foreground)]">
-                      @{profile?.username?.toLowerCase() || profile?.full_name?.toLowerCase().replace(/\s+/g, "") || "username"}
+                      @{user?.name?.toLowerCase().replace(/\s+/g, "") || user?.email?.split("@")[0]?.toLowerCase() || "username"}
                     </p>
                   </div>
                   <Button variant="outline" size="sm">Change</Button>
@@ -1946,7 +1946,7 @@ Each code can only be used once.
                           Scan this QR code with your authenticator app
                         </p>
                         <p className="text-xs font-mono bg-[var(--background)] px-2 py-1 rounded">
-                          VELLON:{profile?.phone_number || user?.email?.split("@")[0] || "user"}
+                          VELLON:{user?.phoneNumber || user?.email?.split("@")[0] || "user"}
                         </p>
                       </div>
                     )}
