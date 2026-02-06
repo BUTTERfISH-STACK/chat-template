@@ -44,7 +44,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api/whatsapp") ||
     pathname.startsWith("/api/chat") ||
     pathname.startsWith("/api/marketplace") ||
-    pathname.startsWith("/api/tophot")
+    pathname.startsWith("/api/tophot") ||
+    pathname.startsWith("/api/auth")
   ) {
     return NextResponse.next();
   }
