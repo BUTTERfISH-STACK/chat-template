@@ -59,15 +59,11 @@ export async function createSession(
     userAgent,
   };
 
-  // In a production environment, you would store this in a session store (Redis, database)
-  // For this implementation, we'll use the auth_token column in the users table
-
   try {
     await db
       .update(users)
       .set({
-        authToken: token,
-        updatedAt: new Date(),
+        sessionToken: token,
       })
       .where(eq(users.id, userId));
   } catch (error) {
@@ -90,15 +86,13 @@ export async function validateSession(token: string): Promise<SessionValidationR
     const user = await db
       .select({
         id: users.id,
-        phoneNumber: users.phoneNumber,
         name: users.name,
         email: users.email,
-        authToken: users.authToken,
+        sessionToken: users.sessionToken,
         createdAt: users.createdAt,
-        isVerified: users.isVerified,
       })
       .from(users)
-      .where(eq(users.authToken, token))
+      .where(eq(users.sessionToken, token))
       .limit(1);
 
     if (user.length === 0) {
@@ -107,7 +101,7 @@ export async function validateSession(token: string): Promise<SessionValidationR
 
     const sessionUser = user[0];
 
-    if (sessionUser.authToken !== token) {
+    if (sessionUser.sessionToken !== token) {
       return { valid: false, error: 'Token mismatch' };
     }
 
@@ -117,7 +111,7 @@ export async function validateSession(token: string): Promise<SessionValidationR
       session: {
         token,
         userId: sessionUser.id,
-        createdAt: sessionUser.createdAt || new Date(),
+        createdAt: new Date(sessionUser.createdAt || Date.now()),
         expiresAt: new Date(Date.now() + SESSION_DURATION_MS),
         lastActivity: new Date(),
       },
@@ -136,8 +130,7 @@ export async function destroySession(userId: string): Promise<boolean> {
     await db
       .update(users)
       .set({
-        authToken: null,
-        updatedAt: new Date(),
+        sessionToken: null,
       })
       .where(eq(users.id, userId));
 
@@ -223,12 +216,8 @@ export async function getCurrentUser() {
     const user = await db
       .select({
         id: users.id,
-        phoneNumber: users.phoneNumber,
         name: users.name,
         email: users.email,
-        avatar: users.avatar,
-        bio: users.bio,
-        isVerified: users.isVerified,
         createdAt: users.createdAt,
       })
       .from(users)
@@ -240,22 +229,6 @@ export async function getCurrentUser() {
     console.error('Failed to get current user:', error);
     return null;
   }
-}
-
-/**
- * Set session cookie
- */
-export function setSessionCookie(token: string): void {
-  // This is handled in the API route response
-  // This is just a utility for reference
-}
-
-/**
- * Clear session cookie
- */
-export function clearSessionCookie(): void {
-  // This is handled in the logout API route
-  // This is just a utility for reference
 }
 
 export default {

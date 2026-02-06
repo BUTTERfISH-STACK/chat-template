@@ -1,131 +1,176 @@
-// Drizzle ORM Database Schema
-// Using SQLite with better-sqlite3
+/**
+ * Vellon X - Complete Database Schema
+ * Open-source social + marketplace platform
+ * Using SQLite with Drizzle ORM
+ */
 
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
-import { SQL } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
-// Generate unique ID
-export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+// ============================================================================
+// UTILITIES
+// ============================================================================
+
+/** Generate UUID v4 */
+export function generateUUID(): string {
+  return randomUUID();
 }
 
-// Users table
+/** Current timestamp in ISO format */
+export function now(): string {
+  return new Date().toISOString();
+}
+
+// ============================================================================
+// USERS TABLE
+// ============================================================================
+
 export const users = sqliteTable('users', {
-  id: text('id').primaryKey(),
-  phoneNumber: text('phone_number').unique().notNull(),
-  name: text('name'),
-  email: text('email'),
-  avatar: text('avatar'),
-  bio: text('bio'),
-  password: text('password'),
-  authToken: text('auth_token'),
-  isVerified: integer('is_verified', { mode: 'boolean' }).default(false),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$onUpdateFn(() => new Date()),
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
+  name: text('name').notNull(),
+  email: text('email').unique().notNull(),
+  sessionToken: text('session_token').unique(),
+  createdAt: text('created_at').default(now()),
 });
 
-// Conversations table
+// ============================================================================
+// PROFILES TABLE
+// ============================================================================
+
+export const profiles = sqliteTable('profiles', {
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  avatarUrl: text('avatar_url'),
+  statusMessage: text('status_message'),
+  lastSeen: text('last_seen').default(now()),
+  updatedAt: text('updated_at').default(now()),
+});
+
+// ============================================================================
+// CONVERSATIONS TABLE
+// ============================================================================
+
 export const conversations = sqliteTable('conversations', {
-  id: text('id').primaryKey(),
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
   name: text('name'),
-  type: text('type').default('DIRECT'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$onUpdateFn(() => new Date()),
+  createdAt: text('created_at').default(now()),
+  updatedAt: text('updated_at').default(now()),
 });
 
-// Conversation participants table
+// ============================================================================
+// CONVERSATION PARTICIPANTS TABLE
+// ============================================================================
+
 export const conversationParticipants = sqliteTable('conversation_participants', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
   conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
-  joinedAt: integer('joined_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  lastReadAt: integer('last_read_at', { mode: 'timestamp' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  joinedAt: text('joined_at').default(now()),
+  lastReadAt: text('last_read_at'),
 });
 
-// Messages table
+// ============================================================================
+// MESSAGES TABLE
+// ============================================================================
+
 export const messages = sqliteTable('messages', {
-  id: text('id').primaryKey(),
-  content: text('content').notNull(),
-  type: text('type').default('TEXT'),
-  mediaUrl: text('media_url'),
-  senderId: text('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
   conversationId: text('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
-  isRead: integer('is_read', { mode: 'boolean' }).default(false),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  senderId: text('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  createdAt: text('created_at').default(now()),
 });
 
-// Stores table
-export const stores = sqliteTable('stores', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  logo: text('logo'),
-  phone: text('phone').notNull(),
-  email: text('email').notNull(),
-  address: text('address'),
-  ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  rating: real('rating').default(0),
-  totalSales: integer('total_sales').default(0),
-  isActive: integer('is_active', { mode: 'boolean' }).default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$onUpdateFn(() => new Date()),
-});
+// ============================================================================
+// MARKETPLACE ITEMS TABLE
+// ============================================================================
 
-// Products table
-export const products = sqliteTable('products', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
+export const marketplaceItems = sqliteTable('marketplace_items', {
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
+  sellerId: text('seller_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
   description: text('description'),
   price: real('price').notNull(),
-  image: text('image'),
-  category: text('category').notNull(),
-  stock: integer('stock').default(0),
-  storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  isActive: integer('is_active', { mode: 'boolean' }).default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$onUpdateFn(() => new Date()),
+  imageUrl: text('image_url'),
+  createdAt: text('created_at').default(now()),
+  updatedAt: text('updated_at').default(now()),
 });
 
-// Orders table
-export const orders = sqliteTable('orders', {
-  id: text('id').primaryKey(),
-  customerId: text('customer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
-  totalAmount: real('total_amount').notNull(),
-  status: text('status').default('PENDING'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$onUpdateFn(() => new Date()),
+// ============================================================================
+// MARKETPLACE ORDERS TABLE
+// ============================================================================
+
+export const marketplaceOrders = sqliteTable('marketplace_orders', {
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
+  buyerId: text('buyer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  total: real('total').notNull(),
+  status: text('status').default('pending'),
+  createdAt: text('created_at').default(now()),
 });
 
-// Order items table
-export const orderItems = sqliteTable('order_items', {
-  id: text('id').primaryKey(),
-  orderId: text('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
-  productId: text('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+// ============================================================================
+// MARKETPLACE ORDER ITEMS TABLE
+// ============================================================================
+
+export const marketplaceOrderItems = sqliteTable('marketplace_order_items', {
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
+  orderId: text('order_id').notNull().references(() => marketplaceOrders.id, { onDelete: 'cascade' }),
+  itemId: text('item_id').notNull().references(() => marketplaceItems.id, { onDelete: 'cascade' }),
   quantity: integer('quantity').notNull(),
-  price: real('price').notNull(),
+  priceAtPurchase: real('price_at_purchase').notNull(),
 });
 
-// Reviews table
-export const reviews = sqliteTable('reviews', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  productId: text('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+// ============================================================================
+// MARKETPLACE REVIEWS TABLE
+// ============================================================================
+
+export const marketplaceReviews = sqliteTable('marketplace_reviews', {
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
+  itemId: text('item_id').notNull().references(() => marketplaceItems.id, { onDelete: 'cascade' }),
+  reviewerId: text('reviewer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   rating: integer('rating').notNull(),
   comment: text('comment'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: text('created_at').default(now()),
 });
 
-// Type exports for use in API routes
+// ============================================================================
+// CONTACTS TABLE
+// ============================================================================
+
+export const contacts = sqliteTable('contacts', {
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  contactId: text('contact_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: text('created_at').default(now()),
+});
+
+// ============================================================================
+// NOTIFICATIONS TABLE (Optional)
+// ============================================================================
+
+export const notifications = sqliteTable('notifications', {
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(),
+  content: text('content'),
+  isRead: integer('is_read', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(now()),
+});
+
+// ============================================================================
+// TYPE EXPORTS
+// ============================================================================
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Profile = typeof profiles.$inferSelect;
+export type NewProfile = typeof profiles.$inferInsert;
 export type Conversation = typeof conversations.$inferSelect;
-export type NewConversation = typeof conversations.$inferInsert;
-export type MessageType = typeof messages.$inferSelect;
+export type ConversationParticipant = typeof conversationParticipants.$inferSelect;
+export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
-export type StoreType = typeof stores.$inferSelect;
-export type NewStore = typeof stores.$inferInsert;
-export type ProductType = typeof products.$inferSelect;
-export type NewProduct = typeof products.$inferInsert;
-export type OrderType = typeof orders.$inferSelect;
-export type OrderItemType = typeof orderItems.$inferInsert;
+export type MarketplaceItem = typeof marketplaceItems.$inferSelect;
+export type MarketplaceOrder = typeof marketplaceOrders.$inferSelect;
+export type MarketplaceOrderItem = typeof marketplaceOrderItems.$inferSelect;
+export type MarketplaceReview = typeof marketplaceReviews.$inferSelect;
+export type Contact = typeof contacts.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
