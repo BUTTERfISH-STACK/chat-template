@@ -4,6 +4,52 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
+// In-memory rate limiter for login attempts
+const loginAttempts = new Map<string, { count: number; lastAttempt: number }>();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_WINDOW = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(identifier: string): { allowed: boolean; remaining: number; retryAfter: number } {
+  const now = Date.now();
+  const record = loginAttempts.get(identifier);
+  
+  if (!record) {
+    return { allowed: true, remaining: MAX_ATTEMPTS, retryAfter: 0 };
+  }
+  
+  // Check if lockout has expired
+  if (now - record.lastAttempt > LOCKOUT_WINDOW) {
+    loginAttempts.delete(identifier);
+    return { allowed: true, remaining: MAX_ATTEMPTS, retryAfter: 0 };
+  }
+  
+  const remaining = Math.max(0, MAX_ATTEMPTS - record.count);
+  
+  if (record.count >= MAX_ATTEMPTS) {
+    const retryAfter = Math.ceil((record.lastAttempt + LOCKOUT_DURATION - now) / 1000);
+    return { allowed: false, remaining: 0, retryAfter };
+  }
+  
+  return { allowed: true, remaining, retryAfter: 0 };
+}
+
+function recordFailedAttempt(identifier: string): void {
+  const now = Date.now();
+  const record = loginAttempts.get(identifier);
+  
+  if (!record || now - record.lastAttempt > LOCKOUT_WINDOW) {
+    loginAttempts.set(identifier, { count: 1, lastAttempt: now });
+  } else {
+    record.count++;
+    record.lastAttempt = now;
+  }
+}
+
+function resetLoginAttempts(identifier: string): void {
+  loginAttempts.delete(identifier);
+}
+
 interface LoginRequest {
   phoneNumber: string;
   password: string;
@@ -25,6 +71,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check rate limit
+    const rateLimitResult = checkRateLimit(phoneNumber);
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { 
+          error: "Too many login attempts. Please try again later.",
+          code: "RATE_LIMITED",
+          retryAfter: rateLimitResult.retryAfter
+        },
+        { 
+          status: 429,
+          headers: { "Retry-After": rateLimitResult.retryAfter.toString() }
+        }
+      );
+    }
+
     // Find user by phone number
     const user = await db
       .select()
@@ -33,8 +96,9 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (user.length === 0) {
+      recordFailedAttempt(phoneNumber);
       return NextResponse.json(
-        { error: "Invalid phone number or password" },
+        { error: "Invalid phone number or password", code: "INVALID_CREDENTIALS" },
         { status: 401 }
       );
     }
@@ -44,11 +108,15 @@ export async function POST(request: NextRequest) {
     // Verify password
     const hashedPassword = hashPassword(password);
     if (foundUser.password !== hashedPassword) {
+      recordFailedAttempt(phoneNumber);
       return NextResponse.json(
-        { error: "Invalid phone number or password" },
+        { error: "Invalid phone number or password", code: "INVALID_CREDENTIALS" },
         { status: 401 }
       );
     }
+
+    // Reset rate limit on successful login
+    resetLoginAttempts(phoneNumber);
 
     // Generate new token on login
     const token = crypto.randomBytes(32).toString("hex");
@@ -78,9 +146,23 @@ export async function POST(request: NextRequest) {
     
     return response;
   } catch (error: any) {
-    console.error("Login error:", error);
+    console.error("Login error details:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name
+    });
+    
+    // Provide more specific error messages based on error type
+    if (error.message?.includes('SQLITE_ERROR')) {
+      return NextResponse.json(
+        { error: "Database error. Please contact support.", code: "DB_ERROR" },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Login failed. Please try again." },
+      { error: "Login failed. Please try again.", code: "AUTH_ERROR" },
       { status: 500 }
     );
   }

@@ -33,6 +33,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate password complexity
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters long" },
+        { status: 400 }
+      );
+    }
+
     // Validate phone number format
     const phoneRegex = /^[0-9+\-\s()]{10,}$/;
     if (!phoneRegex.test(phoneNumber)) {
@@ -90,9 +98,30 @@ export async function POST(request: NextRequest) {
     
     return response;
   } catch (error: any) {
-    console.error("Registration error:", error);
+    console.error("Registration error details:", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name
+    });
+    
+    // Provide more specific error messages based on error type
+    if (error.message?.includes('SQLITE_CONSTRAINT')) {
+      return NextResponse.json(
+        { error: "User with this phone number already exists.", code: "DUPLICATE_PHONE" },
+        { status: 400 }
+      );
+    }
+    
+    if (error.message?.includes('SQLITE_ERROR')) {
+      return NextResponse.json(
+        { error: "Database error. Please contact support.", code: "DB_ERROR" },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Registration failed. Please try again." },
+      { error: "Registration failed. Please try again.", code: "AUTH_ERROR" },
       { status: 500 }
     );
   }

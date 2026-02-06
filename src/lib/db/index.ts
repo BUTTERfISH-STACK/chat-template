@@ -39,11 +39,25 @@ export function initializeDatabase() {
       email TEXT,
       avatar TEXT,
       bio TEXT,
+      password TEXT,
+      auth_token TEXT,
       is_verified INTEGER DEFAULT 0,
       created_at INTEGER,
       updated_at INTEGER
     )
   `);
+
+  // Add missing columns to existing tables (for migration)
+  try {
+    sqlite.exec(`ALTER TABLE users ADD COLUMN password TEXT`);
+  } catch (e) {
+    // Column may already exist
+  }
+  try {
+    sqlite.exec(`ALTER TABLE users ADD COLUMN auth_token TEXT`);
+  } catch (e) {
+    // Column may already exist
+  }
 
   // Conversations table
   sqlite.exec(`
