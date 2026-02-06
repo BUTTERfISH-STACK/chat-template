@@ -1,42 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { stores, users } from '@/lib/db/schema';
+import { Store, User } from '@/lib/db/schema';
 import jwt from 'jsonwebtoken';
 import { eq, desc } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-// Types
-interface StoreType {
-  id: string;
-  name: string;
-  description: string | null;
-  logo: string | null;
-  phone: string;
-  email: string;
-  address: string | null;
-  ownerId: string;
-  rating: number;
-  totalSales: number;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface UserType {
-  id: string;
-  phoneNumber: string;
-  name: string | null;
-  avatar: string | null;
-  email: string | null;
-  bio: string | null;
-  isVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // Helper to verify JWT and get user
-async function getUserFromToken(request: NextRequest): Promise<UserType | null> {
+async function getUserFromToken(request: NextRequest): Promise<User | null> {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -49,7 +21,7 @@ async function getUserFromToken(request: NextRequest): Promise<UserType | null> 
       .from(users)
       .where(eq(users.id, decoded.userId))
       .limit(1)
-      .get() as UserType | undefined;
+      .get() as User | undefined;
     return user || null;
   } catch {
     return null;
@@ -63,48 +35,55 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
 
     // Get stores from Drizzle
-    const allStores = db.select()
-      .from(stores)
-      .where(eq(stores.isActive, true))
-      .orderBy(desc(stores.createdAt))
-      .all() as StoreType[];
+    let allStores: Store[];
+    if (userId) {
+      allStores = db.select()
+        .from(stores)
+        .where(eq(stores.ownerId, userId))
+        .all() as Store[];
+    } else {
+      allStores = db.select()
+        .from(stores)
+        .where(eq(stores.isActive, true))
+        .orderBy(desc(stores.createdAt))
+        .all() as Store[];
+    }
 
     // Get all users for owner info
     const allUsers = db.select()
       .from(users)
-      .all() as UserType[];
-    const userMap = new Map<string, UserType>(allUsers.map((u: UserType) => [u.id, u]));
+      .all() as User[];
+    const userMap = new Map<string, User>(allUsers.map((u: User) => [u.id, u]));
 
     let filteredStores = allStores;
-
-    // Filter by userId if provided
-    if (userId) {
-      filteredStores = filteredStores.filter((s: StoreType) => s.ownerId === userId);
-    }
 
     // Filter by search if provided
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredStores = filteredStores.filter((s: StoreType) => 
+      filteredStores = filteredStores.filter((s: Store) => 
         s.name.toLowerCase().includes(searchLower) ||
         (s.description && s.description.toLowerCase().includes(searchLower))
       );
     }
 
-    const formattedStores = filteredStores.map((s: StoreType) => ({
-      id: s.id,
-      name: s.name,
-      description: s.description,
-      ownerId: s.ownerId,
-      logo: s.logo,
-      phone: s.phone,
-      email: s.email,
-      address: s.address,
-      rating: s.rating,
-      totalSales: s.totalSales,
-      productCount: 0,
-      createdAt: s.createdAt,
-    }));
+    const formattedStores = filteredStores.map((s: Store) => {
+      const owner = userMap.get(s.ownerId);
+      return {
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        ownerId: s.ownerId,
+        ownerName: owner?.name || 'Unknown',
+        logo: s.logo,
+        phone: s.phone,
+        email: s.email,
+        address: s.address,
+        rating: s.rating,
+        totalSales: s.totalSales,
+        productCount: 0,
+        createdAt: s.createdAt,
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -143,7 +122,7 @@ export async function POST(request: NextRequest) {
       .from(stores)
       .where(eq(stores.ownerId, user.id))
       .limit(1)
-      .get() as StoreType | undefined;
+      .get() as Store | undefined;
 
     if (existingStore) {
       return NextResponse.json(
@@ -153,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create store with Drizzle
-    const now = new Date();
+    const now = new Date().toISOString();
     const storeId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     const store = db.insert(stores).values({
@@ -170,7 +149,7 @@ export async function POST(request: NextRequest) {
       isActive: true,
       createdAt: now,
       updatedAt: now,
-    }).returning().get() as StoreType;
+    }).returning().get() as Store;
 
     return NextResponse.json({
       success: true,

@@ -81,6 +81,26 @@ export const messages = sqliteTable('messages', {
 });
 
 // ============================================================================
+// STORES TABLE
+// ============================================================================
+
+export const stores = sqliteTable('stores', {
+  id: text('id').primaryKey().$defaultFn(() => generateUUID()),
+  name: text('name').notNull(),
+  description: text('description'),
+  logo: text('logo'),
+  phone: text('phone').notNull(),
+  email: text('email').notNull(),
+  address: text('address'),
+  ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  rating: real('rating').default(0),
+  totalSales: integer('total_sales').default(0),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: text('created_at').default(now()),
+  updatedAt: text('updated_at').default(now()),
+});
+
+// ============================================================================
 // MARKETPLACE ITEMS TABLE
 // ============================================================================
 
@@ -168,6 +188,7 @@ export type Conversation = typeof conversations.$inferSelect;
 export type ConversationParticipant = typeof conversationParticipants.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type NewMessage = typeof messages.$inferInsert;
+export type Store = typeof stores.$inferSelect;
 export type MarketplaceItem = typeof marketplaceItems.$inferSelect;
 export type MarketplaceOrder = typeof marketplaceOrders.$inferSelect;
 export type MarketplaceOrderItem = typeof marketplaceOrderItems.$inferSelect;

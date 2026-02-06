@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { products, stores, users } from '@/lib/db/schema';
+import { marketplaceItems, stores, users } from '@/lib/db/schema';
 import jwt from 'jsonwebtoken';
-import { eq, desc, like, or } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-// Types
+// Types based on actual schema
+interface ProductType {
+  id: string;
+  sellerId: string;
+  title: string;
+  description: string | null;
+  price: number;
+  imageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface StoreType {
   id: string;
   name: string;
@@ -19,34 +30,16 @@ interface StoreType {
   rating: number;
   totalSales: number;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface ProductType {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  image: string | null;
-  category: string;
-  stock: number;
-  storeId: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface UserType {
   id: string;
-  phoneNumber: string;
-  name: string | null;
-  avatar: string | null;
-  email: string | null;
-  bio: string | null;
-  isVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  name: string;
+  email: string;
+  sessionToken: string | null;
+  createdAt: string;
 }
 
 // Helper to verify JWT and get user
@@ -73,16 +66,22 @@ async function getUserFromToken(request: NextRequest): Promise<UserType | null> 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
     const search = searchParams.get('search');
     const storeId = searchParams.get('storeId');
 
     // Get all products
-    const allProducts = db.select()
-      .from(products)
-      .where(eq(products.isActive, true))
-      .orderBy(desc(products.createdAt))
-      .all() as ProductType[];
+    let allProducts: ProductType[];
+    if (storeId) {
+      allProducts = db.select()
+        .from(marketplaceItems)
+        .where(eq(marketplaceItems.sellerId, storeId))
+        .all() as ProductType[];
+    } else {
+      allProducts = db.select()
+        .from(marketplaceItems)
+        .orderBy(desc(marketplaceItems.createdAt))
+        .all() as ProductType[];
+    }
 
     // Get all stores for lookup
     const allStores = db.select()
@@ -92,41 +91,25 @@ export async function GET(request: NextRequest) {
 
     let filteredProducts = allProducts;
 
-    // Filter by category
-    if (category) {
-      filteredProducts = filteredProducts.filter((p: ProductType) => 
-        p.category === category
-      );
-    }
-
-    // Filter by storeId
-    if (storeId) {
-      filteredProducts = filteredProducts.filter((p: ProductType) => 
-        p.storeId === storeId
-      );
-    }
-
     // Filter by search
     if (search) {
       const searchLower = search.toLowerCase();
       filteredProducts = filteredProducts.filter((p: ProductType) => 
-        p.name.toLowerCase().includes(searchLower) ||
+        p.title.toLowerCase().includes(searchLower) ||
         (p.description && p.description.toLowerCase().includes(searchLower))
       );
     }
 
     const formattedProducts = filteredProducts.map((p: ProductType) => {
-      const store = storeMap.get(p.storeId);
+      const store = storeMap.get(p.sellerId);
       return {
         id: p.id,
-        name: p.name,
+        name: p.title,
         price: p.price,
-        image: p.image,
+        image: p.imageUrl,
         seller: store?.name || 'Unknown',
-        sellerId: p.storeId,
-        category: p.category,
+        sellerId: p.sellerId,
         description: p.description,
-        stock: p.stock,
         createdAt: p.createdAt,
       };
     });
@@ -154,11 +137,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, description, price, category, stock, storeId, image } = await request.json();
+    const { title, description, price, storeId, imageUrl } = await request.json();
 
-    if (!name || !price || !category || !storeId) {
+    if (!title || !price || !storeId) {
       return NextResponse.json(
-        { success: false, error: 'Name, price, category, and storeId are required' },
+        { success: false, error: 'Title, price, and storeId are required' },
         { status: 400 }
       );
     }
@@ -178,19 +161,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Create product with Drizzle
-    const now = new Date();
+    const now = new Date().toISOString();
     const productId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
-    const product = db.insert(products).values({
+    const product = db.insert(marketplaceItems).values({
       id: productId,
-      name,
+      sellerId: storeId,
+      title,
       description,
-      price: parseFloat(price),
-      image,
-      category,
-      stock: stock || 0,
-      storeId,
-      isActive: true,
+      price: parseFloat(price as string),
+      imageUrl,
       createdAt: now,
       updatedAt: now,
     }).returning().get() as ProductType;
@@ -199,14 +179,12 @@ export async function POST(request: NextRequest) {
       success: true,
       product: {
         id: product.id,
-        name: product.name,
+        name: product.title,
         price: product.price,
-        image: product.image,
+        image: product.imageUrl,
         seller: store.name,
         sellerId: store.id,
-        category: product.category,
         description: product.description,
-        stock: product.stock,
         createdAt: product.createdAt,
       },
     });

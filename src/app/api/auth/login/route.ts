@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     const token = crypto.randomBytes(32).toString("hex");
     await db
       .update(users)
-      .set({ authToken: token })
+      .set({ sessionToken: token })
       .where(eq(users.id, foundUser.id));
 
     const response = NextResponse.json({
@@ -126,9 +126,7 @@ export async function POST(request: NextRequest) {
       user: {
         id: foundUser.id,
         email: foundUser.email,
-        phoneNumber: foundUser.phoneNumber,
         name: foundUser.name,
-        avatar: foundUser.avatar,
       },
     });
     

@@ -142,9 +142,7 @@ export async function POST(request: NextRequest) {
       id: userId,
       name: body.name.trim(),
       email: body.email.toLowerCase().trim(),
-      phoneNumber: `gmail_${userId}`, // Placeholder for Gmail users
-      authToken: authToken,
-      isVerified: true, // Gmail users are considered verified
+      sessionToken: authToken,
     });
 
     // Reset rate limit on successful registration

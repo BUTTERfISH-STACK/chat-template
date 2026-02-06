@@ -8,7 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { conversations, conversationParticipants, users, messages } from '@/lib/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
-import { getCurrentUserId, generateUUID } from '@/lib/db/schema';
+import { getCurrentUserId } from '@/lib/sessionManager';
+import { generateUUID } from '@/lib/db/schema';
 
 interface ConversationResponse {
   success: boolean;
