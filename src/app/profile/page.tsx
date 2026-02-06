@@ -44,7 +44,6 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       setIsOwnProfile(true);
-      // In a real app, you would check if the profile ID matches the current user
     }
   }, [user]);
 
@@ -96,9 +95,9 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="relative flex-shrink-0">
                 <Avatar className="w-32 h-32 rounded-xl">
-                  <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt={profile?.full_name || "User"} />
+                  <AvatarImage src={user?.avatar || user?.user_metadata?.avatar_url} alt={user?.name || "User"} />
                   <AvatarFallback className="text-2xl">
-                    {profile?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
+                    {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 {user && (
@@ -111,7 +110,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-4 mb-4">
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-display font-bold text-[var(--foreground)]">
-                      {profile?.full_name || user?.email?.split("@")[0] || "Guest User"}
+                      {user?.name || user?.email?.split("@")[0] || "Guest User"}
                     </h1>
                     <Badge variant="gold" className="flex items-center gap-1">
                       <Image 
@@ -181,9 +180,9 @@ export default function ProfilePage() {
 
                 {/* Bio */}
                 <div>
-                  <p className="font-medium text-[var(--foreground)]">{profile?.full_name || user?.email?.split("@")[0] || ""}</p>
+                  <p className="font-medium text-[var(--foreground)]">{user?.name || ""}</p>
                   <p className="text-sm text-[var(--foreground)] mt-1 whitespace-pre-wrap">
-                    {profile?.bio || "No bio yet"}
+                    {user?.bio || "No bio yet"}
                   </p>
                   {user?.email && (
                     <a
@@ -201,15 +200,15 @@ export default function ProfilePage() {
             <div className="md:hidden">
               <div className="flex items-center gap-4 mb-4">
                 <Avatar className="w-20 h-20 rounded-xl">
-                  <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt={profile?.full_name || "User"} />
+                  <AvatarImage src={user?.avatar || user?.user_metadata?.avatar_url} alt={user?.name || "User"} />
                   <AvatarFallback className="text-xl">
-                    {profile?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
+                    {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h1 className="text-xl font-display font-bold text-[var(--foreground)]">
-                      {profile?.full_name || user?.email?.split("@")[0] || "Guest User"}
+                      {user?.name || user?.email?.split("@")[0] || "Guest User"}
                     </h1>
                     <Badge variant="gold" className="flex items-center gap-1 text-[10px] px-2 py-0.5">
                       <Image 
@@ -223,13 +222,13 @@ export default function ProfilePage() {
                     </Badge>
                   </div>
                   <p className="text-sm text-[var(--muted-foreground)]">
-                    @{profile?.username?.toLowerCase() || profile?.full_name?.toLowerCase().replace(/\s+/g, "") || user?.email?.split("@")[0]?.toLowerCase() || "username"}
+                    @{user?.name?.toLowerCase().replace(/\s+/g, "") || user?.email?.split("@")[0]?.toLowerCase() || "username"}
                   </p>
                 </div>
               </div>
 
               <p className="text-sm text-[var(--foreground)] mb-4 whitespace-pre-wrap">
-                {profile?.bio || "No bio yet"}
+                {user?.bio || "No bio yet"}
               </p>
 
               <div className="flex items-center justify-around mb-4">
