@@ -138,8 +138,9 @@ export function validatePassword(password: string): PasswordValidationResult {
     score += 1; // Bonus for meeting all character types
   }
 
-  // Normalize score to 0-4 range
-  score = Math.min(Math.floor(score / 3), 4);
+  // Calculate final score (0-4 scale)
+  const baseScore = errors.length === 0 ? score : 0;
+  score = Math.min(Math.max(baseScore, 0), 4);
 
   return {
     isValid: errors.length === 0,

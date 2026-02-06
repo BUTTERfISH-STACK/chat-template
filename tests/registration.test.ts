@@ -63,7 +63,7 @@ describe('Password Validation', () => {
   });
 
   test('should accept valid strong password', () => {
-    const result = validatePassword('SecureP@ss1');
+    const result = validatePassword('MySecureP@ss1!');
     expect(result.isValid).toBe(true);
     expect(result.score).toBeGreaterThanOrEqual(3);
   });

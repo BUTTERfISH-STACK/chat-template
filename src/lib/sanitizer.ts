@@ -29,7 +29,7 @@ export function sanitizeString(input: unknown): string {
     // Remove vbscript: URLs
     .replace(/vbscript:/gi, '')
     // Remove potential SQL injection patterns
-    .replace(/(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE|EXEC|Xp_)\b)/gi, "'$2")
+    .replace(/(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE|EXEC|Xp_)\b)/gi, '')
     // Remove SQL comments
     .replace(/--/g, '')
     .replace(/\/\*/g, '')
@@ -86,8 +86,10 @@ export function sanitizePhoneNumber(phone: unknown): string {
     return '';
   }
 
-  // Keep only digits, +, -, (), and spaces
-  return phone.replace(/[^\d+\-\s()]/g, '');
+  // Remove all non-digit characters except leading +
+  const digitsOnly = phone.replace(/\D/g, '');
+  // Preserve leading + if the phone number starts with it
+  return phone.startsWith('+') ? '+' + digitsOnly : digitsOnly;
 }
 
 /**

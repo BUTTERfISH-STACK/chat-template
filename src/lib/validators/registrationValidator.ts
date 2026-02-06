@@ -363,11 +363,17 @@ export function validateRegistrationData(data: {
     });
   }
 
-  // If there are errors, return early
+  // If there are errors, return with sanitized data
   if (errors.length > 0) {
     return {
       isValid: false,
       errors,
+      sanitizedData: {
+        phoneNumber: sanitizePhoneNumber(data.phoneNumber),
+        email: sanitizeEmail(data.email || ''),
+        name: sanitizeInput(data.name),
+        password: data.password,
+      },
     };
   }
 
