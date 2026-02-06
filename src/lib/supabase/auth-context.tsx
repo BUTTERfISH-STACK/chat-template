@@ -9,6 +9,7 @@ import {
   getSession,
   onAuthStateChange,
   getProfile,
+  updateProfile,
   UserProfile,
 } from '@/lib/supabase/auth';
 
