@@ -2,61 +2,81 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/supabase/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, register, isLoading: authLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    phoneNumber: "",
     email: "",
-    name: "",
     password: "",
+    fullName: "",
+    confirmPassword: "",
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
+    setSuccess("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setSuccess("");
 
     try {
-      const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      // Check response status before parsing JSON
-      if (!response.ok) {
-        const text = await response.text();
-        let errorMessage = "Authentication failed";
-        try {
-          const data = JSON.parse(text);
-          errorMessage = data.error || errorMessage;
-          console.error("Auth error response:", data);
-        } catch {
-          errorMessage = text || errorMessage;
-          console.error("Auth error text:", text);
+      if (isLogin) {
+        // Login
+        const result = await login(formData.email, formData.password);
+        
+        if (result.success) {
+          setSuccess(result.message);
+          setTimeout(() => {
+            router.push("/chat");
+            router.refresh();
+          }, 1000);
+        } else {
+          setError(result.message);
         }
-        throw new Error(errorMessage);
-      }
+      } else {
+        // Register
+        if (formData.password !== formData.confirmPassword) {
+          setError("Passwords do not match");
+          setIsLoading(false);
+          return;
+        }
 
-      console.log("Auth successful, redirecting to /chat");
-      router.push("/chat");
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+        // Use the auth context register function
+        const result = await register(
+          formData.email,
+          formData.password,
+          formData.fullName
+        );
+
+        if (result.success) {
+          setSuccess(result.message);
+          // Redirect to chat after registration
+          setTimeout(() => {
+            router.push("/chat");
+            router.refresh();
+          }, 1500);
+        } else {
+          setError(result.message);
+        }
+      }
+    } catch (err) {
+      console.error("Auth error:", err);
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -83,36 +103,23 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="fullName">Full Name</Label>
                 <Input
-                  id="name"
-                  name="name"
+                  id="fullName"
+                  name="fullName"
                   type="text"
                   placeholder="John Doe"
-                  value={formData.name}
+                  value={formData.fullName}
                   onChange={handleChange}
                   required={!isLogin}
                   className="h-11"
+                  disabled={isLoading}
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                name="phoneNumber"
-                type="tel"
-                placeholder="+1234567890"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                required
-                className="h-11"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email (optional)</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 name="email"
@@ -120,7 +127,9 @@ export default function LoginPage() {
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={handleChange}
+                required
                 className="h-11"
+                disabled={isLoading}
               />
             </div>
 
@@ -135,8 +144,27 @@ export default function LoginPage() {
                 onChange={handleChange}
                 required
                 className="h-11"
+                disabled={isLoading}
+                minLength={8}
               />
             </div>
+
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required={!isLogin}
+                  className="h-11"
+                  disabled={isLoading}
+                />
+              </div>
+            )}
 
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
@@ -144,12 +172,18 @@ export default function LoginPage() {
               </div>
             )}
 
+            {success && (
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-500 text-sm">
+                {success}
+              </div>
+            )}
+
             <Button
               type="submit"
               className="w-full h-11 font-semibold"
-              disabled={isLoading}
+              disabled={isLoading || authLoading}
             >
-              {isLoading ? (
+              {isLoading || authLoading ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -175,12 +209,26 @@ export default function LoginPage() {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setError("");
+                setSuccess("");
               }}
               className="text-[var(--primary)] hover:underline font-medium"
+              disabled={isLoading}
             >
               {isLogin ? "Sign Up" : "Sign In"}
             </button>
           </div>
+
+          {/* Direct link to dedicated registration page */}
+          {isLogin && (
+            <div className="mt-4 text-center">
+              <Link 
+                href="/register" 
+                className="text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors"
+              >
+                Create a new account →
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

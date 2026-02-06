@@ -8,6 +8,7 @@ export { Label } from "./label"
 export { Loading } from "./loading"
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card"
 export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "./dialog"
+export { LogoutButton } from "./LogoutButton"
 
 // Navigation Components
 export { Sidebar, BottomNavBar } from "./Sidebar"
