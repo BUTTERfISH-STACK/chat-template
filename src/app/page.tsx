@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
-import { useAuth } from "@/lib/supabase/auth-context";
+import { useAuth } from "@/lib/auth-context";
 
 // Types
 interface Story {

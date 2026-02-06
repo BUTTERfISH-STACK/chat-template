@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
-import { useAuth } from "@/lib/supabase/auth-context";
+import { useAuth } from "@/lib/auth-context";
 
 // Post interface
 interface Post {
@@ -29,7 +29,7 @@ interface UserStats {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, profile, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "tagged">("posts");
   const [isFollowing, setIsFollowing] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(true);

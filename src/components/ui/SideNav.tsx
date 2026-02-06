@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/supabase/auth-context";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 
 interface NavItem {
@@ -82,19 +82,16 @@ const defaultNavItems: NavItem[] = [
 export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, profile, isLoading, isAuthenticated, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 
   const getUserInitials = () => {
-    if (profile?.full_name) {
-      return profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-    }
-    if (profile?.phone_number) {
-      return profile.phone_number.slice(-2);
+    if (user?.name) {
+      return user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
     }
     if (user?.email) {
       return user.email.charAt(0).toUpperCase();
@@ -102,7 +99,7 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
     return "U";
   };
 
-  const userName = profile?.full_name || profile?.phone_number || user?.email?.split("@")[0] || "User";
+  const userName = user?.name || user?.email?.split("@")[0] || "User";
 
   return (
     <aside
@@ -254,19 +251,16 @@ export function SideNav({ items = defaultNavItems, className }: SideNavProps) {
 export function TopNavBar({ items = defaultNavItems }: SideNavProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, profile, isLoading, isAuthenticated, logout } = useAuth();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 
   const getUserInitials = () => {
-    if (profile?.full_name) {
-      return profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-    }
-    if (profile?.phone_number) {
-      return profile.phone_number.slice(-2);
+    if (user?.name) {
+      return user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
     }
     if (user?.email) {
       return user.email.charAt(0).toUpperCase();

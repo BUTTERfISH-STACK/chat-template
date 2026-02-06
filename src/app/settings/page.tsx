@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SideNav, TopNavBar } from "@/components/ui/SideNav";
-import { useAuth } from "@/lib/supabase/auth-context";
+import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
 // User preferences interface
@@ -202,7 +202,7 @@ const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, profile, isLoading: authLoading, updateUser } = useAuth();
+  const { user, isLoading: authLoading, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [isMounted, setIsMounted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -380,15 +380,15 @@ export default function SettingsPage() {
 
   // Initialize form data from user
   useEffect(() => {
-    if (profile) {
+    if (user) {
       setFormData({
-        name: profile.full_name || "",
-        email: user?.email || "",
-        bio: profile.bio || "",
-        phoneNumber: profile.phone_number || "",
+        name: user.name || "",
+        email: user.email || "",
+        bio: user.bio || "",
+        phoneNumber: user.phoneNumber || "",
       });
     }
-  }, [profile, user]);
+  }, [user]);
 
   // Load preferences from localStorage on mount (client-side only)
   useEffect(() => {
@@ -513,11 +513,11 @@ export default function SettingsPage() {
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Update user profile in Supabase
+      // Update user profile
       await updateUser({
-        full_name: formData.name,
+        name: formData.name,
         bio: formData.bio,
-        phone_number: formData.phoneNumber,
+        phoneNumber: formData.phoneNumber,
       });
 
       showToast("success", "Profile updated successfully!");
@@ -982,7 +982,7 @@ Each code can only be used once.
 
       // Create object URL for preview and update user profile
       const imageUrl = URL.createObjectURL(file);
-      updateUser({ avatar_url: imageUrl });
+      updateUser({ avatar: imageUrl });
       showToast("success", "Profile photo updated successfully!");
     }
   };

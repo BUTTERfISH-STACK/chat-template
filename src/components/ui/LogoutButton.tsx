@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/supabase/auth-context";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 
 interface LogoutButtonProps {
@@ -26,17 +26,9 @@ export function LogoutButton({
     setIsLoading(true);
     
     try {
-      const result = await logout();
-      
-      if (result.success) {
-        router.push("/login");
-        router.refresh();
-      } else {
-        console.error("Logout failed:", result.message);
-        // Still redirect to login even if logout fails
-        router.push("/login");
-        router.refresh();
-      }
+      await logout();
+      router.push("/login");
+      router.refresh();
     } catch (error) {
       console.error("Logout error:", error);
       router.push("/login");
