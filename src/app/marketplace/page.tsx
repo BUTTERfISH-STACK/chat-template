@@ -28,6 +28,12 @@ interface Seller {
   avatar: string;
 }
 
+interface MarketplaceResponse {
+  success: boolean;
+  products?: Product[];
+  error?: string;
+}
+
 const categories = [
   { id: "all", label: "All" },
   { id: "electronics", label: "Electronics" },
@@ -52,24 +58,34 @@ export default function MarketplacePage() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const params: { category?: string; search?: string } = {};
-        if (selectedCategory !== "all") {
-          params.category = selectedCategory;
+        const response = await fetch("/api/marketplace/items");
+        const result = await response.json();
+        
+        if (result.success && result.items) {
+          // Transform items to products format
+          const transformedProducts: Product[] = result.items.map((item: any) => ({
+            id: item.id,
+            name: item.title,
+            price: item.price,
+            image: item.imageUrl || "",
+            seller: item.sellerName,
+            sellerId: item.sellerId,
+            category: "general",
+            description: item.description || "",
+            stock: 1,
+            createdAt: item.createdAt,
+          }));
+          setProducts(transformedProducts);
         }
-        if (searchQuery) {
-          params.search = searchQuery;
-        }
-        const data = await marketplaceAPI.getProducts(params);
-        setProducts(data);
       } catch (err) {
+        console.error("Failed to fetch products:", err);
         setError("Failed to load products");
-        console.error(err);
       } finally {
         setIsLoading(false);
       }
     }
     fetchProducts();
-  }, [selectedCategory, searchQuery]);
+  }, []);
 
   const toggleLike = (productId: string) => {
     setLikedProducts((prev) => {
@@ -86,17 +102,6 @@ export default function MarketplacePage() {
   const filteredProducts = selectedCategory === "all"
     ? products
     : products.filter((p) => p.category === selectedCategory);
-
-  const getAspectRatioClass = (ratio: string) => {
-    switch (ratio) {
-      case "portrait":
-        return "aspect-[3/4]";
-      case "landscape":
-        return "aspect-[4/3]";
-      default:
-        return "aspect-square";
-    }
-  };
 
   if (isLoading) {
     return (
@@ -202,186 +207,193 @@ export default function MarketplacePage() {
             </div>
           )}
 
-          {/* Products Grid/Masonry */}
-          <div className="p-4 md:p-6">
-            {filteredProducts.length === 0 && !error ? (
-              <div className="vellon-empty">
-                <div className="vellon-empty-icon">
-                  <svg className="w-8 h-8 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                </div>
-                <p className="vellon-empty-title">No products found</p>
-                <p className="vellon-empty-description">
-                  Try adjusting your search or filter to find what you're looking for.
-                </p>
+          {/* Empty state */}
+          {filteredProducts.length === 0 && !error && (
+            <div className="vellon-empty">
+              <div className="vellon-empty-icon">
+                <svg className="w-8 h-8 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
               </div>
-            ) : (
-              <>
-                {viewMode === "masonry" ? (
-                  <div className="vellon-grid-masonry">
-                    {filteredProducts.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/marketplace/product/${product.id}`}
-                        className="vellon-card vellon-card-hover vellon-card-interactive block animate-fade-in"
+              <p className="vellon-empty-title">No products yet</p>
+              <p className="vellon-empty-description">
+                Be the first to list an item in the marketplace!
+              </p>
+              <Button
+                className="mt-4 vellon-btn-primary"
+                onClick={() => router.push("/create")}
+              >
+                List Your Item
+              </Button>
+            </div>
+          )}
+
+          {/* Products Grid/Masonry */}
+          {filteredProducts.length > 0 && (
+            <div className="p-4 md:p-6">
+              {viewMode === "masonry" ? (
+                <div className="vellon-grid-masonry">
+                  {filteredProducts.map((product) => (
+                    <Link
+                      key={product.id}
+                      href={`/marketplace/product/${product.id}`}
+                      className="vellon-card vellon-card-hover vellon-card-interactive block animate-fade-in"
+                    >
+                      {/* Product Image */}
+                      <div
+                        className={cn(
+                          "bg-[var(--secondary)] relative overflow-hidden",
+                          "aspect-square"
+                        )}
                       >
-                        {/* Product Image - Varying Aspect Ratios */}
-                        <div
-                          className={cn(
-                            "bg-[var(--secondary)] relative overflow-hidden",
-                            "aspect-square"
-                          )}
+                        {/* Placeholder for product image */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <svg
+                            className="w-12 h-12 text-[var(--muted-foreground)]/50"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+
+                        {/* Like button */}
+                        <button
+                          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-all duration-200 active:scale-90"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleLike(product.id);
+                          }}
                         >
-                          {/* Placeholder for product image */}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <svg
-                              className="w-12 h-12 text-[var(--muted-foreground)]/50"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                          </div>
-
-                          {/* Like button */}
-                          <button
-                            className="absolute top-3 right-3 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-all duration-200 active:scale-90"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              toggleLike(product.id);
-                            }}
+                          <svg
+                            className={cn(
+                              "w-5 h-5 transition-transform duration-200",
+                              likedProducts.has(product.id)
+                                ? "fill-[var(--primary)] text-[var(--primary)]"
+                                : "text-[var(--foreground)]"
+                            )}
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.5}
                           >
-                            <svg
-                              className={cn(
-                                "w-5 h-5 transition-transform duration-200",
-                                likedProducts.has(product.id)
-                                  ? "fill-[var(--primary)] text-[var(--primary)]"
-                                  : "text-[var(--foreground)]"
-                              )}
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={1.5}
-                            >
-                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                            </svg>
-                          </button>
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                          </svg>
+                        </button>
 
-                          {/* Category badge */}
-                          <div className="absolute top-3 left-3">
-                            <span className="vellon-badge vellon-badge-secondary capitalize">
-                              {product.category}
-                            </span>
-                          </div>
+                        {/* Category badge */}
+                        <div className="absolute top-3 left-3">
+                          <span className="vellon-badge vellon-badge-secondary capitalize">
+                            {product.category}
+                          </span>
                         </div>
+                      </div>
 
-                        {/* Product Info */}
-                        <div className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-lg font-semibold text-[var(--foreground)]">
-                              ${product.price.toFixed(2)}
-                            </p>
-                            <div className="flex items-center gap-1">
-                              <svg className="w-4 h-4 fill-[var(--primary)] text-[var(--primary)]" viewBox="0 0 24 24">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                              </svg>
-                              <p className="text-sm text-[var(--muted-foreground)]">
-                                {likedProducts.has(product.id) ? 
-                                  (parseInt(likedProducts.size.toString()) + 1) : 0}
-                              </p>
-                            </div>
-                          </div>
-                          <p className="text-sm text-[var(--foreground)] mb-3 line-clamp-2">
-                            {product.name}
+                      {/* Product Info */}
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-lg font-semibold text-[var(--foreground)]">
+                            ${product.price.toFixed(2)}
                           </p>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-6 h-6 rounded-lg">
-                              <AvatarFallback className="text-[10px]">
-                                {product.seller.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
+                          <div className="flex items-center gap-1">
+                            <svg className="w-4 h-4 fill-[var(--primary)] text-[var(--primary)]" viewBox="0 0 24 24">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
                             <p className="text-sm text-[var(--muted-foreground)]">
-                              @{product.seller}
+                              {likedProducts.has(product.id) ? 
+                                (parseInt(likedProducts.size.toString()) + 1) : 0}
                             </p>
                           </div>
                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="vellon-grid-uniform">
-                    {filteredProducts.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/marketplace/product/${product.id}`}
-                        className="vellon-card vellon-card-hover vellon-card-interactive block animate-fade-in"
-                      >
-                        <div className="aspect-square bg-[var(--secondary)] relative overflow-hidden">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <svg
-                              className="w-12 h-12 text-[var(--muted-foreground)]/50"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                          </div>
-                          <button
-                            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 hover:bg-white shadow-sm"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              toggleLike(product.id);
-                            }}
+                        <p className="text-sm text-[var(--foreground)] mb-3 line-clamp-2">
+                          {product.name}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-6 h-6 rounded-lg">
+                            <AvatarFallback className="text-[10px]">
+                              {product.seller.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <p className="text-sm text-[var(--muted-foreground)]">
+                            @{product.seller}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="vellon-grid-uniform">
+                  {filteredProducts.map((product) => (
+                    <Link
+                      key={product.id}
+                      href={`/marketplace/product/${product.id}`}
+                      className="vellon-card vellon-card-hover vellon-card-interactive block animate-fade-in"
+                    >
+                      <div className="aspect-square bg-[var(--secondary)] relative overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <svg
+                            className="w-12 h-12 text-[var(--muted-foreground)]/50"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                           >
-                            <svg
-                              className={cn(
-                                "w-4 h-4",
-                                likedProducts.has(product.id)
-                                  ? "fill-[var(--primary)] text-[var(--primary)]"
-                                  : "text-[var(--foreground)]"
-                              )}
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
                               strokeWidth={1.5}
-                            >
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                        <button
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-white/90 hover:bg-white shadow-sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleLike(product.id);
+                          }}
+                        >
+                          <svg
+                            className={cn(
+                              "w-4 h-4",
+                              likedProducts.has(product.id)
+                                ? "fill-[var(--primary)] text-[var(--primary)]"
+                                : "text-[var(--foreground)]"
+                            )}
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={1.5}
+                          >
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-semibold text-[var(--foreground)]">${product.price.toFixed(2)}</p>
+                          <div className="flex items-center gap-1">
+                            <svg className="w-3 h-3 fill-[var(--primary)] text-[var(--primary)]" viewBox="0 0 24 24">
                               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                             </svg>
-                          </button>
-                        </div>
-                        <div className="p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="font-semibold text-[var(--foreground)]">${product.price.toFixed(2)}</p>
-                            <div className="flex items-center gap-1">
-                              <svg className="w-3 h-3 fill-[var(--primary)] text-[var(--primary)]" viewBox="0 0 24 24">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                              </svg>
-                              <p className="text-xs text-[var(--muted-foreground)]">
-                                {likedProducts.has(product.id) ? 
-                                  (parseInt(likedProducts.size.toString()) + 1) : 0}
-                              </p>
-                            </div>
+                            <p className="text-xs text-[var(--muted-foreground)]">
+                              {likedProducts.has(product.id) ? 
+                                (parseInt(likedProducts.size.toString()) + 1) : 0}
+                            </p>
                           </div>
-                          <p className="text-xs text-[var(--muted-foreground)] truncate">{product.name}</p>
                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                        <p className="text-xs text-[var(--muted-foreground)] truncate">{product.name}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
 

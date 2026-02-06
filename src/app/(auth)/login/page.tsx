@@ -51,7 +51,16 @@ export default function LoginPage() {
             router.refresh();
           }, 1000);
         } else {
-          setError(result.error || "Login failed. Please try again.");
+          // Show more specific error message
+          if (result.code === "INVALID_CREDENTIALS") {
+            setError("No account found with this name and Gmail address. Please register first.");
+          } else if (result.code === "RATE_LIMITED") {
+            setError("Too many login attempts. Please try again later.");
+          } else if (result.code === "DB_ERROR") {
+            setError("Database error. Please contact support.");
+          } else {
+            setError(result.error || "Login failed. Please try again.");
+          }
         }
       } else {
         // Registration still uses the existing API
@@ -67,10 +76,10 @@ export default function LoginPage() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-          setSuccess(result.message || "Registration successful!");
+          setSuccess(result.message || "Registration successful! You can now login.");
           setTimeout(() => {
-            router.push("/chat");
-            router.refresh();
+            setIsLogin(true);
+            setFormData({ name: "", email: "" });
           }, 1500);
         } else {
           setError(result.message || result.error || "Registration failed. Please try again.");
