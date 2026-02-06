@@ -30,43 +30,24 @@ export * from './schema';
 
 // Initialize database tables
 export function initializeDatabase() {
-  // Users table
+  // Users table - using same schema as Drizzle
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
-      phone_number TEXT UNIQUE NOT NULL,
-      name TEXT,
-      email TEXT,
-      avatar TEXT,
-      bio TEXT,
-      password TEXT,
-      auth_token TEXT,
-      is_verified INTEGER DEFAULT 0,
-      created_at INTEGER,
-      updated_at INTEGER
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      session_token TEXT UNIQUE,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  // Add missing columns to existing tables (for migration)
-  try {
-    sqlite.exec(`ALTER TABLE users ADD COLUMN password TEXT`);
-  } catch (e) {
-    // Column may already exist
-  }
-  try {
-    sqlite.exec(`ALTER TABLE users ADD COLUMN auth_token TEXT`);
-  } catch (e) {
-    // Column may already exist
-  }
 
   // Conversations table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS conversations (
       id TEXT PRIMARY KEY,
       name TEXT,
-      type TEXT DEFAULT 'DIRECT',
-      created_at INTEGER,
-      updated_at INTEGER
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -76,9 +57,8 @@ export function initializeDatabase() {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-      joined_at INTEGER,
-      last_read_at INTEGER,
-      UNIQUE(user_id, conversation_id)
+      joined_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      last_read_at TEXT
     )
   `);
 
@@ -86,17 +66,14 @@ export function initializeDatabase() {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
-      content TEXT NOT NULL,
-      type TEXT DEFAULT 'TEXT',
-      media_url TEXT,
-      sender_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-      is_read INTEGER DEFAULT 0,
-      created_at INTEGER
+      sender_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Stores table
+  // Stores table - updated to match Drizzle schema
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS stores (
       id TEXT PRIMARY KEY,
@@ -110,62 +87,89 @@ export function initializeDatabase() {
       rating REAL DEFAULT 0,
       total_sales INTEGER DEFAULT 0,
       is_active INTEGER DEFAULT 1,
-      created_at INTEGER,
-      updated_at INTEGER
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Products table
+  // Marketplace Items table - matches marketplaceItems in Drizzle
   sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS products (
+    CREATE TABLE IF NOT EXISTS marketplace_items (
       id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
+      seller_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
       description TEXT,
       price REAL NOT NULL,
-      image TEXT,
-      category TEXT NOT NULL,
-      stock INTEGER DEFAULT 0,
-      store_id TEXT NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-      is_active INTEGER DEFAULT 1,
-      created_at INTEGER,
-      updated_at INTEGER
+      image_url TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Orders table
+  // Marketplace Orders table
   sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS orders (
+    CREATE TABLE IF NOT EXISTS marketplace_orders (
       id TEXT PRIMARY KEY,
-      customer_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      store_id TEXT NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
-      total_amount REAL NOT NULL,
-      status TEXT DEFAULT 'PENDING',
-      created_at INTEGER,
-      updated_at INTEGER
+      buyer_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      total REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Order items table
+  // Marketplace Order Items table
   sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS order_items (
+    CREATE TABLE IF NOT EXISTS marketplace_order_items (
       id TEXT PRIMARY KEY,
-      order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-      product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      order_id TEXT NOT NULL REFERENCES marketplace_orders(id) ON DELETE CASCADE,
+      item_id TEXT NOT NULL REFERENCES marketplace_items(id) ON DELETE CASCADE,
       quantity INTEGER NOT NULL,
-      price REAL NOT NULL
+      price_at_purchase REAL NOT NULL
     )
   `);
 
-  // Reviews table
+  // Marketplace Reviews table
   sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS reviews (
+    CREATE TABLE IF NOT EXISTS marketplace_reviews (
       id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      item_id TEXT NOT NULL REFERENCES marketplace_items(id) ON DELETE CASCADE,
+      reviewer_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       rating INTEGER NOT NULL,
       comment TEXT,
-      created_at INTEGER,
-      UNIQUE(user_id, product_id)
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Contacts table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS contacts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      contact_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Notifications table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      content TEXT,
+      is_read INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Profiles table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS profiles (
+      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      avatar_url TEXT,
+      status_message TEXT,
+      last_seen TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
 }
